@@ -1,0 +1,91 @@
+import { test, expect } from '../../../fixtures/page-fixtures';
+import { TestDataBuilder } from '../../../config/test-data';
+
+test.describe(
+    'Login functionality',
+    {
+        tag: ['@e2e', '@login'],
+    },
+    () => {
+        test.beforeEach(async ({ loginPage }) => {
+            await loginPage.goToLogin();
+        });
+
+        test(
+            'Verify login page elements are displayed',
+            {
+                tag: ['@smoke'],
+            },
+            async ({ loginPage }) => {
+                await test.step('Verify all login form elements are visible', async () => {
+                    await loginPage.verifyLoginPageElements();
+                });
+            }
+        );
+
+        test(
+            'Successfully login with valid credentials',
+            {
+                tag: ['@smoke'],
+            },
+            async ({ loginPage }) => {
+                const validUser = TestDataBuilder.createValidUser();
+
+                await test.step('Login with valid credentials', async () => {
+                    await loginPage.login(validUser.userName, validUser.password);
+                });
+
+                await test.step('Verify user is logged in', async () => {
+                    await loginPage.verifyLoggedInState(validUser.userName);
+                });
+            }
+        );
+
+        test('Login fails with invalid credentials', async ({ loginPage }) => {
+            const invalidUser = TestDataBuilder.createInvalidUser();
+
+            await test.step('Attempt login with invalid credentials', async () => {
+                await loginPage.login(invalidUser.userName, invalidUser.password);
+            });
+
+            await test.step('Verify error message is displayed', async () => {
+                await loginPage.verifyInvalidLoginMessage();
+            });
+        });
+
+        test('Login fails with empty credentials', async ({ loginPage }) => {
+            await test.step('Click login without entering credentials', async () => {
+                await loginPage.click(loginPage.loginButton);
+            });
+
+            await test.step('Verify validation errors are shown', async () => {
+                await expect(loginPage.userNameInput).toHaveCSS('border-color', 'rgb(220, 53, 69)');
+                await expect(loginPage.passwordInput).toHaveCSS('border-color', 'rgb(220, 53, 69)');
+            });
+        });
+
+        test('Logout after successful login', async ({ loginPage }) => {
+            const validUser = TestDataBuilder.createValidUser();
+
+            await test.step('Login with valid credentials', async () => {
+                await loginPage.login(validUser.userName, validUser.password);
+                await loginPage.verifyLoggedInState(validUser.userName);
+            });
+
+            await test.step('Logout and verify login page is displayed', async () => {
+                await loginPage.logout();
+                await expect(loginPage.loginButton).toBeVisible();
+            });
+        });
+
+        test('Navigate to register page from login', async ({ loginPage, registerPage }) => {
+            await test.step('Click New User button', async () => {
+                await loginPage.goToRegister();
+            });
+
+            await test.step('Verify register page is displayed', async () => {
+                await registerPage.verifyRegisterPageElements();
+            });
+        });
+    }
+);

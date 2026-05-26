@@ -1,0 +1,39 @@
+{
+    "name": "demoqa-bookstore",
+    "version": "1.0.0",
+    "description": "Book Store Test Automation Framework — UI & API Testing with Playwright",
+    "main": "index.js",
+    "scripts": {
+        "test": "playwright test",
+        "test:headed": "playwright test --headed",
+        "test:ui": "playwright test --ui",
+        "test:debug": "playwright test --debug",
+        "test:e2e": "playwright test --grep @e2e",
+        "test:api": "playwright test --grep @api",
+        "test:smoke": "playwright test --grep @smoke",
+        "test:report": "playwright show-report",
+        "lint": "eslint . --ext .ts",
+        "lint:fix": "eslint . --ext .ts --fix",
+        "format": "prettier --write \"**/*.{ts,json,md}\"",
+        "format:check": "prettier --check \"**/*.{ts,json,md}\""
+    },
+    "keywords": [
+        "playwright",
+        "test-automation",
+        "e2e-testing",
+        "api-testing",
+        "typescript",
+        "demoqa",
+        "bookstore"
+    ],
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "@playwright/test": "^1.50.1",
+        "@types/node": "^22.13.1",
+        "@typescript-eslint/eslint-plugin": "^6.0.0",
+        "@typescript-eslint/parser": "^6.0.0",
+        "eslint": "^8.0.0",
+        "prettier": "^3.0.0"
+    }
+}
