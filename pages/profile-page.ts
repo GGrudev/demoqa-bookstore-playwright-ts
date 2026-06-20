@@ -21,13 +21,13 @@ export default class ProfilePage extends BasePage {
 
         this.userNameValue = page.locator('#userName-value');
         this.booksTable = page.locator('div.books-wrapper table');
-        this.bookRows = page.locator('tbody>tr');
+        this.bookRows = this.booksTable.locator('tbody > tr');
         this.deleteAccountButton = page.getByRole('button', { name: 'Delete Account' });
         this.deleteAllBooksButton = page.getByRole('button', { name: 'Delete All Books' });
         this.goToBookStoreButton = page.locator('#gotoStore');
-        this.logoutButton = page.locator('#submit').filter({ hasText: 'Logout' });
+        this.logoutButton = page.locator('#submit').filter({ hasText: /Log\s?out/i });
         this.searchBox = page.locator('#searchBox');
-        this.noRowsFound = page.getByText('No rows found');
+        this.noRowsFound = page.locator('.rt-noData');
         this.notLoggedInMessage = page.getByText(
             'Currently you are not logged into the Book Store application'
         );
@@ -46,25 +46,30 @@ export default class ProfilePage extends BasePage {
     }
 
     async getBookTitlesInProfile(): Promise<string[]> {
+        const titleLinks = this.booksTable.locator('tbody a');
         const titles: string[] = [];
-        const rows = await this.bookRows.all();
-        for (const row of rows) {
-            const titleLink = row.locator('a');
-            if (await titleLink.isVisible()) {
-                titles.push((await titleLink.innerText()).trim());
+
+        for (const link of await titleLinks.all()) {
+            if (await link.isVisible()) {
+                titles.push((await link.innerText()).trim());
             }
         }
+
         return titles;
     }
 
     async deleteAllBooks() {
+        await this.deleteAllBooksButton.scrollIntoViewIfNeeded();
         await this.click(this.deleteAllBooksButton);
-        await this.click(this.dialogOkButton);
+        const dialog = this.page.getByRole('dialog', { name: 'Delete All Books' });
+        await this.confirmWithOptionalAlert(dialog.getByRole('button', { name: 'OK' }), false);
+        await this.verifyNoBooksInProfile();
     }
 
     async deleteAccount() {
         await this.click(this.deleteAccountButton);
-        await this.click(this.dialogOkButton);
+        const dialog = this.page.getByRole('dialog');
+        await this.confirmBootstrapDialog(dialog.getByRole('button', { name: 'OK' }));
     }
 
     async navigateToBookStore() {
@@ -81,15 +86,45 @@ export default class ProfilePage extends BasePage {
     }
 
     async verifyNoBooksInProfile() {
-        await expect(this.noRowsFound).toBeVisible();
+        await expect.poll(async () => (await this.getBookTitlesInProfile()).length).toBe(0);
+    }
+
+    async deleteBookByIsbn(isbn: string) {
+        const row = this.page.locator(`tbody > tr:has(a[href*="${isbn}"])`);
+        await expect(row).toBeVisible();
+        await this.click(row.locator('td').last().getByRole('img'));
+        await this.confirmDeleteBookDialog();
+        await expect(row).toBeHidden();
     }
 
     async deleteBookByTitle(title: string) {
-        const row = this.page.locator('.rt-tr-group').filter({
-            has: this.page.locator('a', { hasText: title }),
-        });
-        const deleteIcon = row.locator('#delete-record-undefined');
-        await this.click(deleteIcon);
-        await this.click(this.dialogOkButton);
+        const row = this.page.getByRole('row', { name: new RegExp(title) });
+        await expect(row).toBeVisible();
+        await this.click(row.locator('td').last().getByRole('img'));
+        await this.confirmDeleteBookDialog();
+        await expect(this.page.getByRole('link', { name: title })).toBeHidden();
+    }
+
+    private async confirmDeleteBookDialog() {
+        await this.confirmWithOptionalAlert(this.page.locator('#closeSmallModal-ok'));
+    }
+
+    private async confirmBootstrapDialog(confirmButton: Locator) {
+        await expect(confirmButton).toBeVisible();
+        await confirmButton.click();
+        await expect(confirmButton).toBeHidden({ timeout: 15000 });
+    }
+
+    private async confirmWithOptionalAlert(confirmButton: Locator, waitToClose = true) {
+        await expect(confirmButton).toBeVisible({ timeout: 10000 });
+        const alertPromise = this.page.waitForEvent('dialog', { timeout: 5000 }).catch(() => null);
+        await confirmButton.evaluate((button) => (button as HTMLButtonElement).click());
+        const nativeDialog = await alertPromise;
+        if (nativeDialog) {
+            await nativeDialog.accept();
+        }
+        if (waitToClose) {
+            await expect(confirmButton).toBeHidden({ timeout: 15000 });
+        }
     }
 }

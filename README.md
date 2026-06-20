@@ -113,6 +113,25 @@ export DEMOQA_PASSWORD="YourPass@123"
 
 Copy `.env.example` to `.env` for local overrides. Default fallback credentials live in `config/environments.ts`.
 
+## Authentication Fixtures
+
+The framework provides reusable login fixtures that persist browser state with Playwright `storageState`:
+
+| Fixture           | Purpose                                                                       |
+| ----------------- | ----------------------------------------------------------------------------- |
+| `loggedInUser`    | Logs in with static/env credentials and saves session state under `.auth/`    |
+| `loggedInApiUser` | Creates an isolated API user, logs in through the UI, and saves session state |
+| `apiTestUser`     | Creates and cleans up an isolated API user without UI login                   |
+
+For **hybrid UI/API tests**, prepare data through the API first, then call `loginViaUiWithoutStorageState()` from `utils/auth-flow.ts`. DemoQA invalidates the UI session when API calls are made after browser login, so API setup must happen before UI login in those scenarios.
+
+```typescript
+// Hybrid pattern
+await apiHelpers.addBooksToUser(apiTestUser.userId, apiTestUser.token, [isbn]);
+await loginViaUiWithoutStorageState(page, apiTestUser);
+await profilePage.goToProfile();
+```
+
 ## CI Pipeline
 
 On every push and pull request to `main` / `master`, GitHub Actions runs:
@@ -219,8 +238,7 @@ After pushing, update the CI badge URL in this README with your GitHub username.
 - Add Docker support for a portable test execution environment
 - Add JUnit reporting for richer CI test summaries
 - Expand contract validation for API response schemas (e.g. Zod)
-- Add authenticated fixture with `storageState` to reduce repeated logins
-- Cover remaining UI flows: add/delete books from profile, replace book API
+- Cover replace book API workflow
 
 ## License
 
