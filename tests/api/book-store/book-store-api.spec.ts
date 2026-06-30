@@ -1,5 +1,8 @@
 import { test, expect } from '../../../fixtures/page-fixtures';
 import { TestDataBuilder } from '../../../config/test-data';
+import { BooksListSchema, BookSchema } from '../../../schemas/book.schema';
+import { UserResponseSchema } from '../../../schemas/account.schema';
+import { parseApiResponse } from '../../../utils/schema-validators';
 
 test.describe(
     'BookStore API',
@@ -17,25 +20,20 @@ test.describe(
                     const response = await apiHelpers.getAllBooks();
 
                     expect(response.status).toBe(200);
-                    expect(response.body.books).toBeDefined();
-                    expect(response.body.books.length).toBeGreaterThan(0);
+                    const booksList = parseApiResponse(BooksListSchema, response.body);
+                    expect(booksList.books.length).toBeGreaterThan(0);
                 });
             }
         );
 
-        test('Get all books returns correct book structure', async ({ apiHelpers }) => {
-            await test.step('Verify book object structure', async () => {
+        test('Get all books response matches Zod book contract', async ({ apiHelpers }) => {
+            await test.step('Validate every book in the list against BookSchema', async () => {
                 const response = await apiHelpers.getAllBooks();
-                const firstBook = response.body.books[0];
+                const booksList = parseApiResponse(BooksListSchema, response.body);
 
-                expect(firstBook).toHaveProperty('isbn');
-                expect(firstBook).toHaveProperty('title');
-                expect(firstBook).toHaveProperty('subTitle');
-                expect(firstBook).toHaveProperty('author');
-                expect(firstBook).toHaveProperty('publisher');
-                expect(firstBook).toHaveProperty('pages');
-                expect(firstBook).toHaveProperty('description');
-                expect(firstBook).toHaveProperty('website');
+                for (const book of booksList.books) {
+                    expect(parseApiResponse(BookSchema, book)).toEqual(book);
+                }
             });
         });
 
@@ -46,10 +44,11 @@ test.describe(
                 const response = await apiHelpers.getBookByIsbn(expectedBook.isbn);
 
                 expect(response.status).toBe(200);
-                expect(response.body.isbn).toBe(expectedBook.isbn);
-                expect(response.body.title).toBe(expectedBook.title);
-                expect(response.body.author).toBe(expectedBook.author);
-                expect(response.body.publisher).toBe(expectedBook.publisher);
+                const book = parseApiResponse(BookSchema, response.body);
+                expect(book.isbn).toBe(expectedBook.isbn);
+                expect(book.title).toBe(expectedBook.title);
+                expect(book.author).toBe(expectedBook.author);
+                expect(book.publisher).toBe(expectedBook.publisher);
             });
         });
 
@@ -66,7 +65,8 @@ test.describe(
 
             await test.step('Fetch all books and verify known books are present', async () => {
                 const response = await apiHelpers.getAllBooks();
-                const apiTitles = response.body.books.map((book: { title: string }) => book.title);
+                const booksList = parseApiResponse(BooksListSchema, response.body);
+                const apiTitles = booksList.books.map((book) => book.title);
 
                 for (const knownBook of knownBooks) {
                     expect(apiTitles).toContain(knownBook.title);
@@ -94,10 +94,9 @@ test.describe(
                 );
 
                 expect(userResponse.status).toBe(200);
-                expect(userResponse.body.books.map((book) => book.isbn)).toContain(bookToAdd.isbn);
-                expect(userResponse.body.books.map((book) => book.title)).toContain(
-                    bookToAdd.title
-                );
+                const user = parseApiResponse(UserResponseSchema, userResponse.body);
+                expect(user.books.map((book) => book.isbn)).toContain(bookToAdd.isbn);
+                expect(user.books.map((book) => book.title)).toContain(bookToAdd.title);
             });
         });
 
@@ -131,9 +130,8 @@ test.describe(
                 );
 
                 expect(userResponse.status).toBe(200);
-                expect(userResponse.body.books.map((book) => book.isbn)).not.toContain(
-                    bookToDelete.isbn
-                );
+                const user = parseApiResponse(UserResponseSchema, userResponse.body);
+                expect(user.books.map((book) => book.isbn)).not.toContain(bookToDelete.isbn);
             });
         });
 
@@ -151,13 +149,15 @@ test.describe(
         test('Book ISBN matches between list and detail endpoints', async ({ apiHelpers }) => {
             await test.step('Cross-reference book data between endpoints', async () => {
                 const allBooksResponse = await apiHelpers.getAllBooks();
-                const firstBookFromList = allBooksResponse.body.books[0];
+                const booksList = parseApiResponse(BooksListSchema, allBooksResponse.body);
+                const firstBookFromList = booksList.books[0];
 
                 const detailResponse = await apiHelpers.getBookByIsbn(firstBookFromList.isbn);
+                const bookDetail = parseApiResponse(BookSchema, detailResponse.body);
 
-                expect(detailResponse.body.isbn).toBe(firstBookFromList.isbn);
-                expect(detailResponse.body.title).toBe(firstBookFromList.title);
-                expect(detailResponse.body.author).toBe(firstBookFromList.author);
+                expect(bookDetail.isbn).toBe(firstBookFromList.isbn);
+                expect(bookDetail.title).toBe(firstBookFromList.title);
+                expect(bookDetail.author).toBe(firstBookFromList.author);
             });
         });
     }

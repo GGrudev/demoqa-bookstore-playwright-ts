@@ -26,7 +26,7 @@ This project demonstrates senior QA automation practices on a public demo applic
 | Test runner | [Playwright](https://playwright.dev/)         |
 | Language    | TypeScript (strict mode)                      |
 | Patterns    | Page Object Model, custom fixtures, test tags |
-| Quality     | ESLint, Prettier                              |
+| Quality     | ESLint, Prettier, Zod (API contracts)         |
 | CI          | GitHub Actions                                |
 
 ## Project Structure
@@ -35,6 +35,7 @@ This project demonstrates senior QA automation practices on a public demo applic
 .github/workflows/   CI pipeline (lint, format, API, smoke)
 config/              Environment config and test data builders
 fixtures/            Custom Playwright fixtures and per-test API user lifecycle
+schemas/             Zod runtime contracts for DemoQA API responses
 pages/               Page Object classes
 tests/
   api/               API contract and workflow tests
@@ -81,7 +82,9 @@ flowchart TB
 ### Layer responsibilities
 
 - `config/` — URLs, credentials, timeouts, and reusable test data builders.
-- `utils/api-helpers.ts` — typed client for DemoQA account and book endpoints.
+- `utils/api-helpers.ts` — typed client for DemoQA account and book endpoints; validates success responses with Zod.
+- `schemas/` — Zod schemas for book and account API contracts (`BookSchema`, `TokenResponseSchema`, etc.).
+- `utils/schema-validators.ts` — shared `parseApiResponse` helper for runtime validation.
 - `utils/base-page.ts` and `utils/waits.ts` — shared UI interactions and waits.
 - `pages/` — page-specific locators and workflows.
 - `fixtures/page-fixtures.ts` — injects page objects, API helpers, and isolated users into tests.
@@ -91,7 +94,7 @@ flowchart TB
 
 | Layer  | Purpose                     | Examples                                          |
 | ------ | --------------------------- | ------------------------------------------------- |
-| API    | Fast backend validation     | Token generation, book CRUD, authorization        |
+| API    | Fast backend validation     | Token generation, book CRUD, Zod contract checks  |
 | UI     | User-facing flows           | Login, browse books, book details, profile        |
 | Hybrid | Reliable E2E with API setup | Add book via API, verify collection in profile UI |
 
@@ -130,6 +133,19 @@ For **hybrid UI/API tests**, prepare data through the API first, then call `logi
 await apiHelpers.addBooksToUser(apiTestUser.userId, apiTestUser.token, [isbn]);
 await loginViaUiWithoutStorageState(page, apiTestUser);
 await profilePage.goToProfile();
+```
+
+## API Contract Validation
+
+TypeScript interfaces in `api-helpers.ts` describe expected shapes at compile time only. **Zod schemas** in `schemas/` validate real API JSON at runtime.
+
+Successful responses from `ApiHelpers` are parsed against schemas such as `BooksListSchema`, `BookSchema`, `TokenResponseSchema`, and `UserResponseSchema`. If DemoQA returns an unexpected type or missing field, tests fail with a clear Zod error path (for example `books[0].pages`).
+
+Error payloads can be validated explicitly in tests:
+
+```typescript
+const error = parseApiResponse(ApiErrorSchema, response.body);
+expect(error.code).toBe('1207');
 ```
 
 ## CI Pipeline
@@ -237,7 +253,6 @@ After pushing, update the CI badge URL in this README with your GitHub username.
 
 - Add Docker support for a portable test execution environment
 - Add JUnit reporting for richer CI test summaries
-- Expand contract validation for API response schemas (e.g. Zod)
 - Cover replace book API workflow
 
 ## License
