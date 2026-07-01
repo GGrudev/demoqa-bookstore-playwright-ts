@@ -1,5 +1,6 @@
 import { test, expect } from '../../../fixtures/page-fixtures';
 import { TestDataBuilder } from '../../../config/test-data';
+import { loginViaUiWithoutStorageState } from '../../../utils/auth-flow';
 
 test.describe(
     'Profile - Manage book collection',
@@ -23,21 +24,13 @@ test.describe(
             }
         );
 
-        test('Logged in user can view their profile', async ({ loginPage, profilePage }) => {
-            const validUser = TestDataBuilder.createValidUser();
-
-            await test.step('Login with valid credentials', async () => {
-                await loginPage.goToLogin();
-                await loginPage.login(validUser.userName, validUser.password);
-                await loginPage.verifyLoggedInState(validUser.userName);
-            });
-
+        test('Logged in user can view their profile', async ({ loggedInUser, profilePage }) => {
             await test.step('Navigate to profile', async () => {
                 await profilePage.goToProfile();
             });
 
             await test.step('Verify profile page elements', async () => {
-                await profilePage.verifyLoggedInProfile(validUser.userName);
+                await profilePage.verifyLoggedInProfile(loggedInUser.userName);
                 await expect(profilePage.deleteAccountButton).toBeVisible();
                 await expect(profilePage.deleteAllBooksButton).toBeVisible();
                 await expect(profilePage.goToBookStoreButton).toBeVisible();
@@ -45,17 +38,13 @@ test.describe(
         });
 
         test('Navigate from profile to book store', async ({
-            loginPage,
+            loggedInUser,
             profilePage,
             bookStorePage,
         }) => {
-            const validUser = TestDataBuilder.createValidUser();
-
-            await test.step('Login and go to profile', async () => {
-                await loginPage.goToLogin();
-                await loginPage.login(validUser.userName, validUser.password);
-                await loginPage.verifyLoggedInState(validUser.userName);
+            await test.step('Go to profile', async () => {
                 await profilePage.goToProfile();
+                await profilePage.verifyLoggedInProfile(loggedInUser.userName);
             });
 
             await test.step('Click Go To Book Store button', async () => {
@@ -72,7 +61,7 @@ test.describe(
             {
                 tag: ['@smoke'],
             },
-            async ({ apiHelpers, apiTestUser, loginPage, profilePage }) => {
+            async ({ apiHelpers, apiTestUser, page, profilePage }) => {
                 const bookToAdd = TestDataBuilder.getKnownBooks()[0];
 
                 await test.step('Prepare user collection through API', async () => {
@@ -86,9 +75,7 @@ test.describe(
                 });
 
                 await test.step('Login through UI with the API-created user', async () => {
-                    await loginPage.goToLogin();
-                    await loginPage.login(apiTestUser.userName, apiTestUser.password);
-                    await loginPage.verifyLoggedInState(apiTestUser.userName);
+                    await loginViaUiWithoutStorageState(page, apiTestUser);
                 });
 
                 await test.step('Verify the API-created collection in the UI profile', async () => {
@@ -99,14 +86,10 @@ test.describe(
             }
         );
 
-        test('Logout from profile page', async ({ loginPage, profilePage }) => {
-            const validUser = TestDataBuilder.createValidUser();
-
-            await test.step('Login and go to profile', async () => {
-                await loginPage.goToLogin();
-                await loginPage.login(validUser.userName, validUser.password);
-                await loginPage.verifyLoggedInState(validUser.userName);
+        test('Logout from profile page', async ({ loggedInUser, profilePage, loginPage }) => {
+            await test.step('Go to profile', async () => {
                 await profilePage.goToProfile();
+                await profilePage.verifyLoggedInProfile(loggedInUser.userName);
             });
 
             await test.step('Logout from profile', async () => {

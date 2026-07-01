@@ -58,6 +58,11 @@ export default class BookDetailsPage extends BasePage {
         await this.click(this.addToCollectionButton);
     }
 
+    async verifyLoggedInOnDetailsPage(expectedUserName: string) {
+        await expect(this.page.locator('#userName-value').first()).toHaveText(expectedUserName);
+        await expect(this.logoutButton).toBeVisible();
+    }
+
     async goBackToBookStore() {
         await this.click(this.backToBookStoreButton);
     }

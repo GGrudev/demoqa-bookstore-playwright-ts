@@ -1,36 +1,20 @@
 import { APIRequestContext } from '@playwright/test';
 import { getApiBaseUrl } from '../config/environments';
+import { BookSchema, BooksListSchema, Book, BooksList } from '../schemas/book.schema';
+import {
+    CreateUserResponseSchema,
+    UserResponseSchema,
+    TokenResponseSchema,
+    CreateUserResponse,
+    UserResponse,
+    TokenResponse,
+} from '../schemas/account.schema';
+import { parseApiResponse, parseApiResponseIfSuccess } from './schema-validators';
 
-export interface ApiCreateUserResponse {
-    userID: string;
-    username: string;
-    books: ApiBookResponse[];
-}
-
-export interface ApiUserResponse {
-    userId: string;
-    username: string;
-    books: ApiBookResponse[];
-}
-
-export interface ApiBookResponse {
-    isbn: string;
-    title: string;
-    subTitle: string;
-    author: string;
-    publish_date: string;
-    publisher: string;
-    pages: number;
-    description: string;
-    website: string;
-}
-
-export interface ApiTokenResponse {
-    token: string;
-    expires: string;
-    status: string;
-    result: string;
-}
+export type ApiCreateUserResponse = CreateUserResponse;
+export type ApiUserResponse = UserResponse;
+export type ApiBookResponse = Book;
+export type ApiTokenResponse = TokenResponse;
 
 export class ApiHelpers {
     private baseUrl: string;
@@ -45,9 +29,14 @@ export class ApiHelpers {
         const response = await this.request.post(`${this.baseUrl}/Account/v1/User`, {
             data: { userName, password },
         });
+        const status = response.status();
+        const body = await response.json();
+
         return {
-            status: response.status(),
-            body: (await response.json()) as ApiCreateUserResponse,
+            status,
+            body: parseApiResponseIfSuccess(status, CreateUserResponseSchema, body) as
+                | CreateUserResponse
+                | unknown,
         };
     }
 
@@ -55,9 +44,11 @@ export class ApiHelpers {
         const response = await this.request.post(`${this.baseUrl}/Account/v1/GenerateToken`, {
             data: { userName, password },
         });
+        const body = await response.json();
+
         return {
             status: response.status(),
-            body: (await response.json()) as ApiTokenResponse,
+            body: parseApiResponse(TokenResponseSchema, body),
         };
     }
 
@@ -65,6 +56,7 @@ export class ApiHelpers {
         const response = await this.request.post(`${this.baseUrl}/Account/v1/Authorized`, {
             data: { userName, password },
         });
+
         return {
             status: response.status(),
             body: await response.json(),
@@ -75,9 +67,14 @@ export class ApiHelpers {
         const response = await this.request.get(`${this.baseUrl}/Account/v1/User/${userId}`, {
             headers: { Authorization: `Bearer ${token}` },
         });
+        const status = response.status();
+        const body = await response.json();
+
         return {
-            status: response.status(),
-            body: (await response.json()) as ApiUserResponse,
+            status,
+            body: parseApiResponseIfSuccess(status, UserResponseSchema, body) as
+                | UserResponse
+                | unknown,
         };
     }
 
@@ -92,9 +89,12 @@ export class ApiHelpers {
 
     async getAllBooks() {
         const response = await this.request.get(`${this.baseUrl}/BookStore/v1/Books`);
+        const status = response.status();
+        const body = await response.json();
+
         return {
-            status: response.status(),
-            body: (await response.json()) as { books: ApiBookResponse[] },
+            status,
+            body: parseApiResponseIfSuccess(status, BooksListSchema, body) as BooksList | unknown,
         };
     }
 
@@ -102,9 +102,12 @@ export class ApiHelpers {
         const response = await this.request.get(`${this.baseUrl}/BookStore/v1/Book`, {
             params: { ISBN: isbn },
         });
+        const status = response.status();
+        const body = await response.json();
+
         return {
-            status: response.status(),
-            body: (await response.json()) as ApiBookResponse,
+            status,
+            body: parseApiResponseIfSuccess(status, BookSchema, body) as Book | unknown,
         };
     }
 
@@ -154,11 +157,12 @@ export class ApiHelpers {
 
     async createUserAndGetToken(userName: string, password: string) {
         const userResponse = await this.createUser(userName, password);
+        const userBody = parseApiResponse(CreateUserResponseSchema, userResponse.body);
         const tokenResponse = await this.generateToken(userName, password);
 
         return {
-            userId: userResponse.body.userID,
-            userName: userResponse.body.username,
+            userId: userBody.userID,
+            userName: userBody.username,
             token: tokenResponse.body.token,
         };
     }

@@ -1,5 +1,7 @@
 import { test, expect } from '../../../fixtures/page-fixtures';
 import { TestDataBuilder } from '../../../config/test-data';
+import { ApiErrorSchema, UserResponseSchema } from '../../../schemas/account.schema';
+import { parseApiResponse } from '../../../utils/schema-validators';
 
 test.describe(
     'Account API',
@@ -64,8 +66,9 @@ test.describe(
                 );
 
                 expect(response.status).toBe(404);
-                expect(response.body.code).toBe('1207');
-                expect(response.body.message).toBe('User not found!');
+                const error = parseApiResponse(ApiErrorSchema, response.body);
+                expect(error.code).toBe('1207');
+                expect(error.message).toBe('User not found!');
             });
         });
 
@@ -77,9 +80,10 @@ test.describe(
                 );
 
                 expect(userResponse.status).toBe(200);
-                expect(userResponse.body.userId).toBe(apiTestUser.userId);
-                expect(userResponse.body.username).toBe(apiTestUser.userName);
-                expect(userResponse.body.books).toEqual([]);
+                const user = parseApiResponse(UserResponseSchema, userResponse.body);
+                expect(user.userId).toBe(apiTestUser.userId);
+                expect(user.username).toBe(apiTestUser.userName);
+                expect(user.books).toEqual([]);
             });
         });
 
