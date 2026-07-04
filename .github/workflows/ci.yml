@@ -10,6 +10,10 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  checks: write
+
 jobs:
   quality:
     name: Lint & format
@@ -71,6 +75,24 @@ jobs:
           path: playwright-report/
           retention-days: 14
 
+      - name: Upload API JUnit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-api
+          path: test-results/junit.xml
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Publish API JUnit results
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: API Tests
+          path: test-results/junit.xml
+          reporter: java-junit
+          fail-on-error: false
+
       - name: Upload API test results
         if: failure()
         uses: actions/upload-artifact@v4
@@ -116,6 +138,24 @@ jobs:
           name: playwright-report-smoke
           path: playwright-report/
           retention-days: 14
+
+      - name: Upload smoke JUnit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-smoke
+          path: test-results/junit.xml
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Publish smoke JUnit results
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Smoke Tests
+          path: test-results/junit.xml
+          reporter: java-junit
+          fail-on-error: false
 
       - name: Upload smoke test results
         if: failure()

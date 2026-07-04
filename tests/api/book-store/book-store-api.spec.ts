@@ -135,6 +135,44 @@ test.describe(
             });
         });
 
+        test('Replace book in user collection', async ({ apiHelpers, apiTestUser }) => {
+            const originalBook = TestDataBuilder.getKnownBooks()[0];
+            const replacementBook = TestDataBuilder.getKnownBooks()[1];
+
+            await test.step('Add original book to user collection', async () => {
+                const response = await apiHelpers.addBooksToUser(
+                    apiTestUser.userId,
+                    apiTestUser.token,
+                    [originalBook.isbn]
+                );
+
+                expect(response.status).toBe(201);
+            });
+
+            await test.step('Replace book via API', async () => {
+                const response = await apiHelpers.replaceBook(
+                    apiTestUser.userId,
+                    apiTestUser.token,
+                    originalBook.isbn,
+                    replacementBook.isbn
+                );
+
+                expect(response.status).toBe(200);
+            });
+
+            await test.step('Verify collection contains replacement book only', async () => {
+                const userResponse = await apiHelpers.getUser(
+                    apiTestUser.userId,
+                    apiTestUser.token
+                );
+
+                expect(userResponse.status).toBe(200);
+                const user = parseApiResponse(UserResponseSchema, userResponse.body);
+                expect(user.books.map((book) => book.isbn)).toContain(replacementBook.isbn);
+                expect(user.books.map((book) => book.isbn)).not.toContain(originalBook.isbn);
+            });
+        });
+
         test('API response times are within acceptable limits', async ({ apiHelpers }) => {
             await test.step('Measure GET /BookStore/v1/Books response time', async () => {
                 const start = Date.now();
