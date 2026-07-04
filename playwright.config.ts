@@ -5,12 +5,16 @@ const isCI = !!process.env.CI;
 const isHeadless = process.env.HEADLESS === 'true' || isCI;
 const env = getEnvironment();
 
+const ciWorkers = process.env.PLAYWRIGHT_WORKERS
+    ? Number.parseInt(process.env.PLAYWRIGHT_WORKERS, 10)
+    : 2;
+
 export default defineConfig({
     testDir: './tests',
     fullyParallel: true,
     forbidOnly: isCI,
     retries: isCI ? 2 : 0,
-    workers: isCI ? 1 : undefined,
+    workers: isCI ? ciWorkers : undefined,
 
     reporter: [
         [

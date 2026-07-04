@@ -148,16 +148,52 @@ const error = parseApiResponse(ApiErrorSchema, response.body);
 expect(error.code).toBe('1207');
 ```
 
-## CI Pipeline
+## CI/CD Pipeline
 
-On every push and pull request to `main` / `master`, GitHub Actions runs:
+Two GitHub Actions workflows cover fast PR checks and on-demand/full regression.
 
-1. **Lint** — ESLint on TypeScript sources
-2. **Format check** — Prettier validation
-3. **API tests** — `npm run test:api` (16 tests)
-4. **Smoke tests** — `npm run test:smoke` (critical UI paths)
+### CI (`ci.yml`) — every push & pull request
+
+| Job               | What it runs         | Parallelism |
+| ----------------- | -------------------- | ----------- |
+| **Lint & format** | ESLint + Prettier    | —           |
+| **API tests**     | `npm run test:api`   | 4 workers   |
+| **Smoke tests**   | `npm run test:smoke` | 2 workers   |
+
+API and smoke jobs run **in parallel** after the quality gate passes.
+
+### Regression (`regression.yml`) — manual & nightly
+
+Trigger from GitHub: **Actions → Regression → Run workflow**
+
+| Suite option         | What runs                                   |
+| -------------------- | ------------------------------------------- |
+| `smoke`              | Critical `@smoke` tests only                |
+| `api`                | All `@api` tests                            |
+| `e2e`                | All `@e2e` UI/hybrid tests                  |
+| `regression` / `all` | API + E2E jobs **in parallel** (full suite) |
+
+- **Schedule:** full regression nightly at 06:00 UTC
+- **Workers:** choose 1, 2, or 4 parallel Playwright workers per job (default: 2)
 
 Failed runs upload Playwright HTML reports and test artifacts for debugging.
+
+### Parallel execution
+
+Playwright runs tests in parallel at two levels:
+
+1. **Within a job** — `fullyParallel: true` and `PLAYWRIGHT_WORKERS` (configurable in Actions)
+2. **Across jobs** — API and smoke/regression API+E2E jobs run as separate parallel GitHub Actions jobs
+
+Locally:
+
+```bash
+# Default: Playwright picks worker count from CPU cores
+npm test
+
+# Override worker count
+PLAYWRIGHT_WORKERS=4 npm run test:api
+```
 
 ### Optional CI secrets
 
@@ -191,6 +227,9 @@ npm run test:api
 
 # Run smoke tests
 npm run test:smoke
+
+# Run full regression suite (all tests)
+npm run test:regression
 
 # Run in headed mode
 npm run test:headed
@@ -254,6 +293,7 @@ After pushing, update the CI badge URL in this README with your GitHub username.
 - Add Docker support for a portable test execution environment
 - Add JUnit reporting for richer CI test summaries
 - Cover replace book API workflow
+- Optional Playwright sharding for larger suites across multiple CI runners
 
 ## License
 
