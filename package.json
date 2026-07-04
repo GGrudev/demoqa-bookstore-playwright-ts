@@ -12,6 +12,8 @@
         "test:api": "playwright test --grep @api",
         "test:smoke": "playwright test --grep @smoke",
         "test:regression": "playwright test",
+        "test:shard:1": "playwright test --shard=1/2",
+        "test:shard:2": "playwright test --shard=2/2",
         "test:report": "playwright show-report",
         "lint": "eslint . --ext .ts",
         "lint:fix": "eslint . --ext .ts --fix",

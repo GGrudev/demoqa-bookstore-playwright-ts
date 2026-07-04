@@ -178,6 +178,8 @@ Trigger from GitHub: **Actions → Regression → Run workflow**
 
 Failed runs upload Playwright HTML reports and test artifacts for debugging.
 
+JUnit XML is written to `test-results/junit.xml` on every run. CI publishes results to the GitHub Checks tab and uploads JUnit artifacts for download.
+
 ### Parallel execution
 
 Playwright runs tests in parallel at two levels:
@@ -193,6 +195,24 @@ npm test
 
 # Override worker count
 PLAYWRIGHT_WORKERS=4 npm run test:api
+```
+
+### Sharding (splitting the suite across machines)
+
+**Workers** parallelize tests on one machine. **Sharding** splits the test list across multiple CI runners.
+
+| Concept  | Scope                              |
+| -------- | ---------------------------------- |
+| Workers  | One machine, N browser processes   |
+| Sharding | M machines, each runs 1/M of tests |
+
+This suite is small enough that workers + parallel jobs are sufficient today. Use the shard scripts above to experiment locally; add CI sharding via `--shard=x/y` when the suite grows beyond ~100 tests.
+
+Quick local example:
+
+```bash
+npm run test:shard:1   # first half of the suite
+npm run test:shard:2   # second half
 ```
 
 ### Optional CI secrets
@@ -231,6 +251,10 @@ npm run test:smoke
 # Run full regression suite (all tests)
 npm run test:regression
 
+# Run half the suite (sharding demo)
+npm run test:shard:1
+npm run test:shard:2
+
 # Run in headed mode
 npm run test:headed
 
@@ -264,10 +288,9 @@ npm run format:check
 - Fetch one book by ISBN
 - Validate known books are present
 - Add a book to a user collection
+- Replace a book in a user collection
 - Delete a book from a user collection
 - Verify collection state through the user endpoint
-
-`replaceBook` exists in the API helper for future coverage but is not exercised yet.
 
 ## Known DemoQA Limitations
 
@@ -291,9 +314,6 @@ After pushing, update the CI badge URL in this README with your GitHub username.
 ## Planned Improvements
 
 - Add Docker support for a portable test execution environment
-- Add JUnit reporting for richer CI test summaries
-- Cover replace book API workflow
-- Optional Playwright sharding for larger suites across multiple CI runners
 
 ## License
 

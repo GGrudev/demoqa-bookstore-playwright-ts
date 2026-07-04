@@ -24,6 +24,7 @@ export default defineConfig({
                 outputFolder: 'playwright-report',
             },
         ],
+        ['junit', { outputFile: 'test-results/junit.xml' }],
     ],
 
     timeout: env.timeout.default,
