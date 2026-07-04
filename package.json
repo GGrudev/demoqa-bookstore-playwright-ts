@@ -11,6 +11,7 @@
         "test:e2e": "playwright test --grep @e2e",
         "test:api": "playwright test --grep @api",
         "test:smoke": "playwright test --grep @smoke",
+        "test:regression": "playwright test",
         "test:report": "playwright show-report",
         "lint": "eslint . --ext .ts",
         "lint:fix": "eslint . --ext .ts --fix",

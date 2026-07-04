@@ -11,10 +11,35 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  quality-and-tests:
-    name: Lint, format, API & smoke tests
+  quality:
+    name: Lint & format
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+  api-tests:
+    name: API tests (parallel)
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repository
@@ -32,36 +57,70 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
-      - name: Lint
-        run: npm run lint
-
-      - name: Check formatting
-        run: npm run format:check
-
       - name: Run API tests
         run: npm run test:api
         env:
           CI: true
+          PLAYWRIGHT_WORKERS: 4
+
+      - name: Upload API Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-api
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Upload API test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-api
+          path: test-results/
+          retention-days: 14
+
+  smoke-tests:
+    name: Smoke tests (parallel)
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
 
       - name: Run smoke tests
         run: npm run test:smoke
         env:
           CI: true
+          PLAYWRIGHT_WORKERS: 2
           DEMOQA_USERNAME: ${{ secrets.DEMOQA_USERNAME }}
           DEMOQA_PASSWORD: ${{ secrets.DEMOQA_PASSWORD }}
 
-      - name: Upload Playwright report
+      - name: Upload smoke Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-smoke
           path: playwright-report/
           retention-days: 14
 
-      - name: Upload test results
+      - name: Upload smoke test results
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
+          name: test-results-smoke
           path: test-results/
           retention-days: 14

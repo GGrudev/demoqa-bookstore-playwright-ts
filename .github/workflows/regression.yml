@@ -1,0 +1,150 @@
+name: Regression
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_suite:
+        description: Test suite to run
+        required: true
+        default: regression
+        type: choice
+        options:
+          - smoke
+          - regression
+          - api
+          - e2e
+          - all
+      workers:
+        description: Parallel workers per job (1-4)
+        required: true
+        default: '2'
+        type: choice
+        options:
+          - '1'
+          - '2'
+          - '4'
+  schedule:
+    # Nightly full regression at 06:00 UTC
+    - cron: '0 6 * * *'
+
+concurrency:
+  group: regression-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint & format
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+  resolve-suite:
+    name: Resolve test matrix
+    needs: quality
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      workers: ${{ steps.set-matrix.outputs.workers }}
+
+    steps:
+      - name: Build test matrix
+        id: set-matrix
+        run: |
+          SUITE="${{ github.event.inputs.test_suite }}"
+          if [ -z "$SUITE" ]; then
+            SUITE="regression"
+          fi
+
+          WORKERS="${{ github.event.inputs.workers }}"
+          if [ -z "$WORKERS" ]; then
+            WORKERS="2"
+          fi
+
+          case "$SUITE" in
+            smoke)
+              MATRIX='{"include":[{"id":"smoke","npm_script":"test:smoke","artifact":"smoke"}]}'
+              ;;
+            api)
+              MATRIX='{"include":[{"id":"api","npm_script":"test:api","artifact":"api"}]}'
+              ;;
+            e2e)
+              MATRIX='{"include":[{"id":"e2e","npm_script":"test:e2e","artifact":"e2e"}]}'
+              ;;
+            all|regression)
+              MATRIX='{"include":[{"id":"api","npm_script":"test:api","artifact":"api"},{"id":"e2e","npm_script":"test:e2e","artifact":"e2e"}]}'
+              ;;
+            *)
+              echo "Unknown suite: $SUITE"
+              exit 1
+              ;;
+          esac
+
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+          echo "workers=$WORKERS" >> "$GITHUB_OUTPUT"
+
+  test:
+    name: ${{ matrix.id }} tests
+    needs: resolve-suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.resolve-suite.outputs.matrix) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run ${{ matrix.id }} tests
+        run: npm run ${{ matrix.npm_script }}
+        env:
+          CI: true
+          PLAYWRIGHT_WORKERS: ${{ needs.resolve-suite.outputs.workers }}
+          DEMOQA_USERNAME: ${{ secrets.DEMOQA_USERNAME }}
+          DEMOQA_PASSWORD: ${{ secrets.DEMOQA_PASSWORD }}
+
+      - name: Upload Playwright report (${{ matrix.artifact }})
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.artifact }}
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Upload test results (${{ matrix.artifact }})
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.artifact }}
+          path: test-results/
+          retention-days: 14
