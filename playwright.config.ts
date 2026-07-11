@@ -1,9 +1,19 @@
 import { defineConfig, devices } from '@playwright/test';
 import { getEnvironment } from './config/environments';
+import { STATIC_USER_STORAGE_STATE } from './utils/auth-storage';
 
 const isCI = !!process.env.CI;
 const isHeadless = process.env.HEADLESS === 'true' || isCI;
 const env = getEnvironment();
+
+const desktopChrome = {
+    ...devices['Desktop Chrome'],
+    viewport: { width: 1920, height: 1080 },
+};
+
+// Specs matching this pattern reuse the shared authenticated session and run in
+// the dedicated `authenticated` project (which depends on the `setup` project).
+const AUTHENTICATED_SPECS = /.*\.authenticated\.spec\.ts/;
 
 const ciWorkers = process.env.PLAYWRIGHT_WORKERS
     ? Number.parseInt(process.env.PLAYWRIGHT_WORKERS, 10)
@@ -45,10 +55,23 @@ export default defineConfig({
 
     projects: [
         {
+            name: 'setup',
+            testMatch: /.*\.setup\.ts/,
+            use: desktopChrome,
+        },
+        {
             name: 'chromium',
+            use: desktopChrome,
+            // Authenticated specs run only in the `authenticated` project below.
+            testIgnore: AUTHENTICATED_SPECS,
+        },
+        {
+            name: 'authenticated',
+            testMatch: AUTHENTICATED_SPECS,
+            dependencies: ['setup'],
             use: {
-                ...devices['Desktop Chrome'],
-                viewport: { width: 1920, height: 1080 },
+                ...desktopChrome,
+                storageState: STATIC_USER_STORAGE_STATE,
             },
         },
     ],

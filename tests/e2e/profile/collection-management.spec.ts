@@ -1,6 +1,6 @@
 import { test, expect } from '../../../fixtures/page-fixtures';
 import { TestDataBuilder } from '../../../config/test-data';
-import { loginViaUiWithoutStorageState } from '../../../utils/auth-flow';
+import { loginViaUi } from '../../../utils/auth-flow';
 
 test.describe(
     'Profile - Collection management',
@@ -52,7 +52,7 @@ test.describe(
             });
 
             await test.step('Login through UI after API setup', async () => {
-                await loginViaUiWithoutStorageState(page, apiTestUser);
+                await loginViaUi(page, apiTestUser);
             });
 
             await test.step('Delete the book from profile', async () => {
@@ -87,7 +87,7 @@ test.describe(
             });
 
             await test.step('Login through UI after API setup', async () => {
-                await loginViaUiWithoutStorageState(page, apiTestUser);
+                await loginViaUi(page, apiTestUser);
             });
 
             await test.step('Delete all books from profile', async () => {
