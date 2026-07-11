@@ -11,7 +11,7 @@ export default class RegisterPage extends BasePage {
     readonly backToLoginButton: Locator;
     readonly recaptcha: Locator;
 
-    constructor(public page: Page) {
+    constructor(page: Page) {
         super(page);
 
         // DemoQA protects registration with reCAPTCHA, so tests cover navigation and form visibility only.
@@ -31,15 +31,14 @@ export default class RegisterPage extends BasePage {
         userName: string,
         password: string
     ) {
-        await this.enterText(this.firstNameInput, firstName);
-        await this.enterText(this.lastNameInput, lastName);
-        await this.enterText(this.userNameInput, userName);
-        await this.enterText(this.passwordInput, password);
+        await this.firstNameInput.fill(firstName);
+        await this.lastNameInput.fill(lastName);
+        await this.userNameInput.fill(userName);
+        await this.passwordInput.fill(password);
     }
 
     async verifyRegisterPageElements() {
-        await this.verifyFieldsVisibility(
-            true,
+        await this.expectFieldsVisible(
             this.heading,
             this.firstNameInput,
             this.lastNameInput,
@@ -51,6 +50,6 @@ export default class RegisterPage extends BasePage {
     }
 
     async goBackToLogin() {
-        await this.click(this.backToLoginButton);
+        await this.backToLoginButton.click();
     }
 }
