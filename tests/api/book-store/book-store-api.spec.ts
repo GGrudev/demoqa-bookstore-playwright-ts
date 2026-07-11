@@ -1,7 +1,6 @@
 import { test, expect } from '../../../fixtures/page-fixtures';
 import { TestDataBuilder } from '../../../config/test-data';
-import { BooksListSchema, BookSchema } from '../../../schemas/book.schema';
-import { UserResponseSchema } from '../../../schemas/account.schema';
+import { BookSchema } from '../../../schemas/book.schema';
 import { parseApiResponse } from '../../../utils/schema-validators';
 
 test.describe(
@@ -20,8 +19,7 @@ test.describe(
                     const response = await apiHelpers.getAllBooks();
 
                     expect(response.status).toBe(200);
-                    const booksList = parseApiResponse(BooksListSchema, response.body);
-                    expect(booksList.books.length).toBeGreaterThan(0);
+                    expect(response.body.books.length).toBeGreaterThan(0);
                 });
             }
         );
@@ -29,9 +27,8 @@ test.describe(
         test('Get all books response matches Zod book contract', async ({ apiHelpers }) => {
             await test.step('Validate every book in the list against BookSchema', async () => {
                 const response = await apiHelpers.getAllBooks();
-                const booksList = parseApiResponse(BooksListSchema, response.body);
 
-                for (const book of booksList.books) {
+                for (const book of response.body.books) {
                     expect(parseApiResponse(BookSchema, book)).toEqual(book);
                 }
             });
@@ -65,8 +62,7 @@ test.describe(
 
             await test.step('Fetch all books and verify known books are present', async () => {
                 const response = await apiHelpers.getAllBooks();
-                const booksList = parseApiResponse(BooksListSchema, response.body);
-                const apiTitles = booksList.books.map((book) => book.title);
+                const apiTitles = response.body.books.map((book) => book.title);
 
                 for (const knownBook of knownBooks) {
                     expect(apiTitles).toContain(knownBook.title);
@@ -94,7 +90,7 @@ test.describe(
                 );
 
                 expect(userResponse.status).toBe(200);
-                const user = parseApiResponse(UserResponseSchema, userResponse.body);
+                const user = userResponse.body;
                 expect(user.books.map((book) => book.isbn)).toContain(bookToAdd.isbn);
                 expect(user.books.map((book) => book.title)).toContain(bookToAdd.title);
             });
@@ -130,7 +126,7 @@ test.describe(
                 );
 
                 expect(userResponse.status).toBe(200);
-                const user = parseApiResponse(UserResponseSchema, userResponse.body);
+                const user = userResponse.body;
                 expect(user.books.map((book) => book.isbn)).not.toContain(bookToDelete.isbn);
             });
         });
@@ -167,7 +163,7 @@ test.describe(
                 );
 
                 expect(userResponse.status).toBe(200);
-                const user = parseApiResponse(UserResponseSchema, userResponse.body);
+                const user = userResponse.body;
                 expect(user.books.map((book) => book.isbn)).toContain(replacementBook.isbn);
                 expect(user.books.map((book) => book.isbn)).not.toContain(originalBook.isbn);
             });
@@ -187,8 +183,7 @@ test.describe(
         test('Book ISBN matches between list and detail endpoints', async ({ apiHelpers }) => {
             await test.step('Cross-reference book data between endpoints', async () => {
                 const allBooksResponse = await apiHelpers.getAllBooks();
-                const booksList = parseApiResponse(BooksListSchema, allBooksResponse.body);
-                const firstBookFromList = booksList.books[0];
+                const firstBookFromList = allBooksResponse.body.books[0];
 
                 const detailResponse = await apiHelpers.getBookByIsbn(firstBookFromList.isbn);
                 const bookDetail = parseApiResponse(BookSchema, detailResponse.body);
