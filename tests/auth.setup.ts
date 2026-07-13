@@ -12,7 +12,7 @@ setup('authenticate static user', { tag: '@e2e' }, async ({ page }) => {
 
     await loginPage.goToLogin();
     await loginPage.login(user.userName, user.password);
-    await loginPage.verifyLoggedInState(user.userName);
+    await loginPage.header.expectLoggedIn(user.userName);
 
     await ensureAuthDir();
     await page.context().storageState({ path: STATIC_USER_STORAGE_STATE });

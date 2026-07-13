@@ -33,6 +33,7 @@ This project demonstrates senior QA automation practices on a public demo applic
 
 ```text
 .github/workflows/   CI pipeline (lint, format, API, smoke)
+components/          Reusable UI component objects (e.g. Header) composed into pages
 config/              Environment config and test data builders
 fixtures/            Custom Playwright fixtures and per-test API user lifecycle
 schemas/             Zod runtime contracts for DemoQA API responses
@@ -40,7 +41,7 @@ pages/               Page Object classes
 tests/
   api/               API contract and workflow tests
   e2e/               UI and hybrid UI/API tests
-utils/               BasePage, waits, and API helpers
+utils/               BasePage, API helpers, and auth utilities
 ```
 
 ## Architecture
@@ -59,7 +60,8 @@ flowchart TB
 
     subgraph pages [Page Objects]
         PO[Login / BookStore / Profile / ...]
-        BP[BasePage + Waits]
+        BP[BasePage]
+        HDR[Header component]
     end
 
     subgraph utils [Utils & Config]
@@ -75,6 +77,7 @@ flowchart TB
     PF --> ATU
     ATU --> AH
     PO --> BP
+    PO --> HDR
     AH --> ENV
     TD --> ENV
 ```
@@ -85,7 +88,8 @@ flowchart TB
 - `utils/api-helpers.ts` — typed client for DemoQA account and book endpoints; validates success responses with Zod.
 - `schemas/` — Zod schemas for book and account API contracts (`BookSchema`, `TokenResponseSchema`, etc.).
 - `utils/schema-validators.ts` — shared `parseApiResponse` helper for runtime validation.
-- `utils/base-page.ts` and `utils/waits.ts` — shared UI interactions and waits.
+- `utils/base-page.ts` — minimal shared base: navigation, the composed `Header`, and an assertion helper.
+- `components/` — reusable UI component objects (e.g. `Header`) composed into page objects for shared UI like the session header.
 - `pages/` — page-specific locators and workflows.
 - `fixtures/page-fixtures.ts` — injects page objects, API helpers, and isolated users into tests.
 - `tests/` — scenarios using `test.step` and tags such as `@api`, `@e2e`, `@smoke`.

@@ -1,10 +1,15 @@
 import { Locator, Page, expect } from '@playwright/test';
+import { Header } from '../components/header';
 
-// Minimal shared base for page objects: only navigation shared by every page and
-// a small assertion helper. Interactions use Playwright locators directly in the
-// page objects, relying on built-in auto-waiting instead of custom wrappers.
+// Minimal shared base for page objects: shared navigation, a composed Header
+// component for session state, and a small assertion helper. Interactions use
+// Playwright locators directly in the page objects, relying on built-in auto-waiting.
 export class BasePage {
-    constructor(public readonly page: Page) {}
+    readonly header: Header;
+
+    constructor(public readonly page: Page) {
+        this.header = new Header(page);
+    }
 
     async goToLogin() {
         await this.page.goto('/login');

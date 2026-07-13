@@ -17,7 +17,7 @@ test.describe(
             });
 
             await test.step('Verify profile page elements', async () => {
-                await profilePage.verifyLoggedInProfile(staticUser.userName);
+                await profilePage.header.expectLoggedIn(staticUser.userName);
                 await expect(profilePage.deleteAccountButton).toBeVisible();
                 await expect(profilePage.deleteAllBooksButton).toBeVisible();
                 await expect(profilePage.goToBookStoreButton).toBeVisible();
@@ -27,7 +27,7 @@ test.describe(
         test('Navigate from profile to book store', async ({ profilePage, bookStorePage }) => {
             await test.step('Go to profile', async () => {
                 await profilePage.goToProfile();
-                await profilePage.verifyLoggedInProfile(staticUser.userName);
+                await profilePage.header.expectLoggedIn(staticUser.userName);
             });
 
             await test.step('Click Go To Book Store button', async () => {
@@ -42,11 +42,11 @@ test.describe(
         test('Logout from profile page', async ({ profilePage, loginPage }) => {
             await test.step('Go to profile', async () => {
                 await profilePage.goToProfile();
-                await profilePage.verifyLoggedInProfile(staticUser.userName);
+                await profilePage.header.expectLoggedIn(staticUser.userName);
             });
 
             await test.step('Logout from profile', async () => {
-                await profilePage.logout();
+                await profilePage.header.logout();
             });
 
             await test.step('Verify redirected to login page', async () => {
