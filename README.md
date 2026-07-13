@@ -116,22 +116,33 @@ export DEMOQA_PASSWORD="YourPass@123"
 
 Copy `.env.example` to `.env` for local overrides. Default fallback credentials live in `config/environments.ts`.
 
-## Authentication Fixtures
+## Authentication
 
-The framework provides reusable login fixtures that persist browser state with Playwright `storageState`:
+The suite uses two complementary authentication strategies, depending on whether a test can share a session.
+
+### Shared session via `storageState` (setup project)
+
+Tests that only need a logged-in static user reuse a single session instead of logging in repeatedly:
+
+1. `tests/auth.setup.ts` runs once as the `setup` project — it logs in the static user through the UI and saves the session to `.auth/static-user.json`.
+2. The `authenticated` project (`playwright.config.ts`) `dependencies: ['setup']` and loads that file via `use.storageState`.
+3. Specs named `*.authenticated.spec.ts` (e.g. `profile-session.authenticated.spec.ts`) run in that project already logged in.
+
+The default `chromium` project ignores `*.authenticated.spec.ts`, so login, logout, and logged-out tests keep starting from a clean session.
+
+### Per-test fixtures (isolated users)
 
 | Fixture           | Purpose                                                                       |
 | ----------------- | ----------------------------------------------------------------------------- |
-| `loggedInUser`    | Logs in with static/env credentials and saves session state under `.auth/`    |
-| `loggedInApiUser` | Creates an isolated API user, logs in through the UI, and saves session state |
-| `apiTestUser`     | Creates and cleans up an isolated API user without UI login                   |
+| `apiTestUser`     | Creates and cleans up an isolated API user (no UI login)                      |
+| `loggedInApiUser` | Creates an isolated API user and logs it in through the UI (per-test session) |
 
-For **hybrid UI/API tests**, prepare data through the API first, then call `loginViaUiWithoutStorageState()` from `utils/auth-flow.ts`. DemoQA invalidates the UI session when API calls are made after browser login, so API setup must happen before UI login in those scenarios.
+For **hybrid UI/API tests**, prepare data through the API first, then call `loginViaUi()` from `utils/auth-flow.ts`. DemoQA invalidates the UI session when API calls are made after browser login, so API setup must happen before UI login. Isolated users can't reuse the shared `storageState` because they don't exist until the fixture creates them.
 
 ```typescript
 // Hybrid pattern
 await apiHelpers.addBooksToUser(apiTestUser.userId, apiTestUser.token, [isbn]);
-await loginViaUiWithoutStorageState(page, apiTestUser);
+await loginViaUi(page, apiTestUser);
 await profilePage.goToProfile();
 ```
 

@@ -9,7 +9,7 @@ export default class BookStorePage extends BasePage {
     readonly logoutButton: Locator;
     readonly userNameValue: Locator;
 
-    constructor(public page: Page) {
+    constructor(page: Page) {
         super(page);
 
         this.searchBox = page.locator('#searchBox');
@@ -21,7 +21,7 @@ export default class BookStorePage extends BasePage {
     }
 
     async searchForBook(query: string) {
-        await this.enterText(this.searchBox, query);
+        await this.searchBox.fill(query);
     }
 
     async clearSearch() {
@@ -42,7 +42,7 @@ export default class BookStorePage extends BasePage {
 
     async clickBookByTitle(title: string) {
         const bookLink = this.page.locator('div>span>a', { hasText: title });
-        await this.click(bookLink);
+        await bookLink.click();
     }
 
     async getBookCount(): Promise<number> {

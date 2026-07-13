@@ -55,7 +55,7 @@ test.describe(
 
         test('Login fails with empty credentials', async ({ loginPage }) => {
             await test.step('Click login without entering credentials', async () => {
-                await loginPage.click(loginPage.loginButton);
+                await loginPage.loginButton.click();
             });
 
             await test.step('Verify validation errors are shown', async () => {

@@ -14,7 +14,7 @@ export default class LoginPage extends BasePage {
     readonly userNameValue: Locator;
     readonly invalidCredentialsMessage: Locator;
 
-    constructor(public page: Page) {
+    constructor(page: Page) {
         super(page);
 
         this.heading = page.getByRole('heading', { name: 'Login in Book Store' });
@@ -31,14 +31,13 @@ export default class LoginPage extends BasePage {
     }
 
     async login(userName: string, password: string) {
-        await this.enterText(this.userNameInput, userName);
-        await this.enterText(this.passwordInput, password);
-        await this.click(this.loginButton);
+        await this.userNameInput.fill(userName);
+        await this.passwordInput.fill(password);
+        await this.loginButton.click();
     }
 
     async verifyLoginPageElements() {
-        await this.verifyFieldsVisibility(
-            true,
+        await this.expectFieldsVisible(
             this.heading,
             this.userNameInput,
             this.passwordInput,
@@ -57,10 +56,10 @@ export default class LoginPage extends BasePage {
     }
 
     async logout() {
-        await this.click(this.logoutButton);
+        await this.logoutButton.click();
     }
 
     async goToRegister() {
-        await this.click(this.newUserButton);
+        await this.newUserButton.click();
     }
 }

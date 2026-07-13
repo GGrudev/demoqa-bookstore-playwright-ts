@@ -1,17 +1,7 @@
 import { ZodSchema } from 'zod';
 
+// Validates an API payload against a Zod schema at runtime, returning the typed value.
+// Throws a descriptive ZodError (with the failing field path) on a contract mismatch.
 export function parseApiResponse<T>(schema: ZodSchema<T>, body: unknown): T {
     return schema.parse(body);
-}
-
-export function parseApiResponseIfSuccess<T>(
-    status: number,
-    schema: ZodSchema<T>,
-    body: unknown
-): T | unknown {
-    if (status >= 200 && status < 300) {
-        return parseApiResponse(schema, body);
-    }
-
-    return body;
 }

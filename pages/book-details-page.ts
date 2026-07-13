@@ -16,7 +16,7 @@ export default class BookDetailsPage extends BasePage {
     readonly loginButton: Locator;
     readonly logoutButton: Locator;
 
-    constructor(public page: Page) {
+    constructor(page: Page) {
         super(page);
 
         this.isbnValue = page.locator('div#ISBN-wrapper #userName-value');
@@ -47,15 +47,15 @@ export default class BookDetailsPage extends BasePage {
     }
 
     async getDisplayedIsbn(): Promise<string> {
-        return await this.getText(this.isbnValue);
+        return (await this.isbnValue.innerText()).trim();
     }
 
     async getDisplayedTitle(): Promise<string> {
-        return await this.getText(this.titleValue);
+        return (await this.titleValue.innerText()).trim();
     }
 
     async addToCollection() {
-        await this.click(this.addToCollectionButton);
+        await this.addToCollectionButton.click();
     }
 
     async verifyLoggedInOnDetailsPage(expectedUserName: string) {
@@ -64,6 +64,6 @@ export default class BookDetailsPage extends BasePage {
     }
 
     async goBackToBookStore() {
-        await this.click(this.backToBookStoreButton);
+        await this.backToBookStoreButton.click();
     }
 }

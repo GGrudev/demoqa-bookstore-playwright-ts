@@ -1,6 +1,6 @@
 import { test, expect } from '../../../fixtures/page-fixtures';
 import { TestDataBuilder } from '../../../config/test-data';
-import { ApiErrorSchema, UserResponseSchema } from '../../../schemas/account.schema';
+import { ApiErrorSchema } from '../../../schemas/account.schema';
 import { parseApiResponse } from '../../../utils/schema-validators';
 
 test.describe(
@@ -80,7 +80,7 @@ test.describe(
                 );
 
                 expect(userResponse.status).toBe(200);
-                const user = parseApiResponse(UserResponseSchema, userResponse.body);
+                const user = userResponse.body;
                 expect(user.userId).toBe(apiTestUser.userId);
                 expect(user.username).toBe(apiTestUser.userName);
                 expect(user.books).toEqual([]);

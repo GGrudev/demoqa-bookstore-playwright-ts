@@ -16,7 +16,7 @@ export default class ProfilePage extends BasePage {
     readonly dialogOkButton: Locator;
     readonly dialogCancelButton: Locator;
 
-    constructor(public page: Page) {
+    constructor(page: Page) {
         super(page);
 
         this.userNameValue = page.locator('#userName-value');
@@ -60,24 +60,24 @@ export default class ProfilePage extends BasePage {
 
     async deleteAllBooks() {
         await this.deleteAllBooksButton.scrollIntoViewIfNeeded();
-        await this.click(this.deleteAllBooksButton);
+        await this.deleteAllBooksButton.click();
         const dialog = this.page.getByRole('dialog', { name: 'Delete All Books' });
         await this.confirmWithOptionalAlert(dialog.getByRole('button', { name: 'OK' }), false);
         await this.verifyNoBooksInProfile();
     }
 
     async deleteAccount() {
-        await this.click(this.deleteAccountButton);
+        await this.deleteAccountButton.click();
         const dialog = this.page.getByRole('dialog');
         await this.confirmBootstrapDialog(dialog.getByRole('button', { name: 'OK' }));
     }
 
     async navigateToBookStore() {
-        await this.click(this.goToBookStoreButton);
+        await this.goToBookStoreButton.click();
     }
 
     async logout() {
-        await this.click(this.logoutButton);
+        await this.logoutButton.click();
     }
 
     async verifyBookInProfile(title: string) {
@@ -92,7 +92,7 @@ export default class ProfilePage extends BasePage {
     async deleteBookByIsbn(isbn: string) {
         const row = this.page.locator(`tbody > tr:has(a[href*="${isbn}"])`);
         await expect(row).toBeVisible();
-        await this.click(row.locator('td').last().getByRole('img'));
+        await row.locator('td').last().getByRole('img').click();
         await this.confirmDeleteBookDialog();
         await expect(row).toBeHidden();
     }
@@ -100,7 +100,7 @@ export default class ProfilePage extends BasePage {
     async deleteBookByTitle(title: string) {
         const row = this.page.getByRole('row', { name: new RegExp(title) });
         await expect(row).toBeVisible();
-        await this.click(row.locator('td').last().getByRole('img'));
+        await row.locator('td').last().getByRole('img').click();
         await this.confirmDeleteBookDialog();
         await expect(this.page.getByRole('link', { name: title })).toBeHidden();
     }
