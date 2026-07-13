@@ -1,26 +1,26 @@
 import { z } from 'zod';
 import { BookSchema } from './book.schema';
 
-export const CreateUserResponseSchema = z.object({
+export const CreateUserResponseSchema = z.strictObject({
     userID: z.string().min(1),
     username: z.string().min(1),
     books: z.array(BookSchema),
 });
 
-export const UserResponseSchema = z.object({
+export const UserResponseSchema = z.strictObject({
     userId: z.string().min(1),
     username: z.string().min(1),
     books: z.array(BookSchema),
 });
 
-export const TokenResponseSchema = z.object({
+export const TokenResponseSchema = z.strictObject({
     token: z.string().nullable(),
     expires: z.string().nullable(),
     status: z.enum(['Success', 'Failed']),
     result: z.string(),
 });
 
-export const ApiErrorSchema = z.object({
+export const ApiErrorSchema = z.strictObject({
     code: z.string(),
     message: z.string(),
 });
