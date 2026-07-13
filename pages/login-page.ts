@@ -8,10 +8,8 @@ export default class LoginPage extends BasePage {
     readonly passwordInput: Locator;
     readonly loginButton: Locator;
     readonly newUserButton: Locator;
-    readonly logoutButton: Locator;
     readonly userNameLabel: Locator;
     readonly passwordLabel: Locator;
-    readonly userNameValue: Locator;
     readonly invalidCredentialsMessage: Locator;
 
     constructor(page: Page) {
@@ -23,10 +21,8 @@ export default class LoginPage extends BasePage {
         this.passwordInput = page.locator('#password');
         this.loginButton = page.locator('#login');
         this.newUserButton = page.locator('#newUser');
-        this.logoutButton = page.locator('#submit').filter({ hasText: 'Logout' });
         this.userNameLabel = page.locator('#userName-label');
         this.passwordLabel = page.locator('#password-label');
-        this.userNameValue = page.locator('#userName-value');
         this.invalidCredentialsMessage = page.locator('#name');
     }
 
@@ -46,17 +42,8 @@ export default class LoginPage extends BasePage {
         );
     }
 
-    async verifyLoggedInState(expectedUserName: string) {
-        await expect(this.userNameValue).toHaveText(expectedUserName);
-        await expect(this.logoutButton).toBeVisible();
-    }
-
     async verifyInvalidLoginMessage() {
         await expect(this.invalidCredentialsMessage).toHaveText('Invalid username or password!');
-    }
-
-    async logout() {
-        await this.logoutButton.click();
     }
 
     async goToRegister() {

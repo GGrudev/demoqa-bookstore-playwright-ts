@@ -13,8 +13,6 @@ export default class BookDetailsPage extends BasePage {
     readonly websiteValue: Locator;
     readonly backToBookStoreButton: Locator;
     readonly addToCollectionButton: Locator;
-    readonly loginButton: Locator;
-    readonly logoutButton: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -33,8 +31,6 @@ export default class BookDetailsPage extends BasePage {
         this.addToCollectionButton = page.locator('#addNewRecordButton', {
             hasText: 'Add To Your Collection',
         });
-        this.loginButton = page.locator('#login');
-        this.logoutButton = page.locator('#submit').filter({ hasText: 'Log out' });
     }
 
     async verifyBookDetails(expectedBook: BookData) {
@@ -56,11 +52,6 @@ export default class BookDetailsPage extends BasePage {
 
     async addToCollection() {
         await this.addToCollectionButton.click();
-    }
-
-    async verifyLoggedInOnDetailsPage(expectedUserName: string) {
-        await expect(this.page.locator('#userName-value').first()).toHaveText(expectedUserName);
-        await expect(this.logoutButton).toBeVisible();
     }
 
     async goBackToBookStore() {

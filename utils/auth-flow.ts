@@ -13,5 +13,5 @@ export async function loginViaUi(page: Page, credentials: UserCredentials): Prom
 
     await loginPage.goToLogin();
     await loginPage.login(credentials.userName, credentials.password);
-    await loginPage.verifyLoggedInState(credentials.userName);
+    await loginPage.header.expectLoggedIn(credentials.userName);
 }

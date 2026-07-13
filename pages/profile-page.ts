@@ -2,16 +2,13 @@ import { Locator, Page, expect } from '@playwright/test';
 import { BasePage } from '../utils/base-page';
 
 export default class ProfilePage extends BasePage {
-    readonly userNameValue: Locator;
     readonly booksTable: Locator;
     readonly bookRows: Locator;
     readonly deleteAccountButton: Locator;
     readonly deleteAllBooksButton: Locator;
     readonly goToBookStoreButton: Locator;
-    readonly logoutButton: Locator;
     readonly searchBox: Locator;
     readonly noRowsFound: Locator;
-    readonly notLoggedInMessage: Locator;
     readonly dialogContainer: Locator;
     readonly dialogOkButton: Locator;
     readonly dialogCancelButton: Locator;
@@ -19,30 +16,16 @@ export default class ProfilePage extends BasePage {
     constructor(page: Page) {
         super(page);
 
-        this.userNameValue = page.locator('#userName-value');
         this.booksTable = page.locator('div.books-wrapper table');
         this.bookRows = this.booksTable.locator('tbody > tr');
         this.deleteAccountButton = page.getByRole('button', { name: 'Delete Account' });
         this.deleteAllBooksButton = page.getByRole('button', { name: 'Delete All Books' });
         this.goToBookStoreButton = page.locator('#gotoStore');
-        this.logoutButton = page.locator('#submit').filter({ hasText: /Log\s?out/i });
         this.searchBox = page.locator('#searchBox');
         this.noRowsFound = page.locator('.rt-noData');
-        this.notLoggedInMessage = page.getByText(
-            'Currently you are not logged into the Book Store application'
-        );
         this.dialogContainer = page.locator('.modal-content');
         this.dialogOkButton = page.locator('#closeSmallModal-ok');
         this.dialogCancelButton = page.locator('#closeSmallModal-cancel');
-    }
-
-    async verifyNotLoggedIn() {
-        await expect(this.notLoggedInMessage).toBeVisible();
-    }
-
-    async verifyLoggedInProfile(expectedUserName: string) {
-        await expect(this.userNameValue).toHaveText(expectedUserName);
-        await expect(this.logoutButton).toBeVisible();
     }
 
     async getBookTitlesInProfile(): Promise<string[]> {
@@ -74,10 +57,6 @@ export default class ProfilePage extends BasePage {
 
     async navigateToBookStore() {
         await this.goToBookStoreButton.click();
-    }
-
-    async logout() {
-        await this.logoutButton.click();
     }
 
     async verifyBookInProfile(title: string) {

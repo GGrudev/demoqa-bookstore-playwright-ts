@@ -36,7 +36,7 @@ test.describe(
                 });
 
                 await test.step('Verify user is logged in', async () => {
-                    await loginPage.verifyLoggedInState(validUser.userName);
+                    await loginPage.header.expectLoggedIn(validUser.userName);
                 });
             }
         );
@@ -69,11 +69,11 @@ test.describe(
 
             await test.step('Login with valid credentials', async () => {
                 await loginPage.login(validUser.userName, validUser.password);
-                await loginPage.verifyLoggedInState(validUser.userName);
+                await loginPage.header.expectLoggedIn(validUser.userName);
             });
 
             await test.step('Logout and verify login page is displayed', async () => {
-                await loginPage.logout();
+                await loginPage.header.logout();
                 await expect(loginPage.loginButton).toBeVisible();
             });
         });

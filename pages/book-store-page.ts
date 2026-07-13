@@ -5,19 +5,13 @@ export default class BookStorePage extends BasePage {
     readonly searchBox: Locator;
     readonly booksTable: Locator;
     readonly bookRows: Locator;
-    readonly loginButton: Locator;
-    readonly logoutButton: Locator;
-    readonly userNameValue: Locator;
 
     constructor(page: Page) {
         super(page);
 
         this.searchBox = page.locator('#searchBox');
         this.booksTable = page.locator('div.books-wrapper table');
-        this.bookRows = page.locator('tbody>tr'); //.filter({ has: page.locator('a') });
-        this.loginButton = page.locator('#login');
-        this.logoutButton = page.locator('#submit').filter({ hasText: 'Log out' });
-        this.userNameValue = page.locator('#userName-value');
+        this.bookRows = page.locator('tbody>tr');
     }
 
     async searchForBook(query: string) {
@@ -57,10 +51,5 @@ export default class BookStorePage extends BasePage {
     async verifyBookIsNotDisplayed(title: string) {
         const bookLink = this.page.locator('div>span>a', { hasText: title });
         await expect(bookLink).toBeHidden();
-    }
-
-    async verifyLoggedInState(expectedUserName: string) {
-        await expect(this.userNameValue).toHaveText(expectedUserName);
-        await expect(this.logoutButton).toBeVisible();
     }
 }

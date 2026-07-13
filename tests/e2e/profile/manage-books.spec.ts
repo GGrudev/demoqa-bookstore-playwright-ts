@@ -19,7 +19,7 @@ test.describe(
                 });
 
                 await test.step('Verify not logged in message', async () => {
-                    await profilePage.verifyNotLoggedIn();
+                    await profilePage.header.expectNotLoggedInMessage();
                 });
             }
         );
@@ -48,7 +48,7 @@ test.describe(
 
                 await test.step('Verify the API-created collection in the UI profile', async () => {
                     await profilePage.goToProfile();
-                    await profilePage.verifyLoggedInProfile(apiTestUser.userName);
+                    await profilePage.header.expectLoggedIn(apiTestUser.userName);
                     await profilePage.verifyBookInProfile(bookToAdd.title);
                 });
             }

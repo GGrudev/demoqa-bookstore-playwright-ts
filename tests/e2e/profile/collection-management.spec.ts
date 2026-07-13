@@ -19,7 +19,7 @@ test.describe(
             await test.step('Open book details while logged in', async () => {
                 await bookStorePage.goToBookStore();
                 await bookStorePage.clickBookByTitle(bookToAdd.title);
-                await bookDetailsPage.verifyLoggedInOnDetailsPage(loggedInApiUser.userName);
+                await bookDetailsPage.header.expectLoggedIn(loggedInApiUser.userName);
             });
 
             await test.step('Add the book to the user collection', async () => {
@@ -28,7 +28,7 @@ test.describe(
 
             await test.step('Verify the book appears in profile', async () => {
                 await profilePage.goToProfile();
-                await profilePage.verifyLoggedInProfile(loggedInApiUser.userName);
+                await profilePage.header.expectLoggedIn(loggedInApiUser.userName);
                 await profilePage.verifyBookInProfile(bookToAdd.title);
             });
         });
@@ -57,7 +57,7 @@ test.describe(
 
             await test.step('Delete the book from profile', async () => {
                 await profilePage.goToProfile();
-                await profilePage.verifyLoggedInProfile(apiTestUser.userName);
+                await profilePage.header.expectLoggedIn(apiTestUser.userName);
                 await profilePage.verifyBookInProfile(bookToDelete.title);
                 await profilePage.deleteBookByIsbn(bookToDelete.isbn);
             });
@@ -92,7 +92,7 @@ test.describe(
 
             await test.step('Delete all books from profile', async () => {
                 await profilePage.goToProfile();
-                await profilePage.verifyLoggedInProfile(apiTestUser.userName);
+                await profilePage.header.expectLoggedIn(apiTestUser.userName);
 
                 for (const book of booksToAdd) {
                     await profilePage.verifyBookInProfile(book.title);
