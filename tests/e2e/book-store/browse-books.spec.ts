@@ -58,16 +58,6 @@ test.describe(
             });
         });
 
-        /*  test('Search with no results shows empty state', async ({ bookStorePage }) => {
-         await test.step('Search for a non-existent book', async () => {
-             await bookStorePage.searchForBook('NonExistentBook12345');
-         });
- 
-         await test.step('Verify no rows found message', async () => {
-             await expect(bookStorePage.noRowsFound).toBeVisible();
-         });
-     }); */
-
         test('Clear search restores all books', async ({ bookStorePage }) => {
             await test.step('Search and then clear', async () => {
                 await bookStorePage.searchForBook('Git');
