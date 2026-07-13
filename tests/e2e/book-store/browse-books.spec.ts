@@ -9,6 +9,7 @@ test.describe(
     () => {
         test.beforeEach(async ({ bookStorePage }) => {
             await bookStorePage.goToBookStore();
+            await bookStorePage.waitForBooksLoaded();
         });
 
         test(
@@ -37,8 +38,11 @@ test.describe(
 
             await test.step('Verify search results contain the book', async () => {
                 await bookStorePage.verifyBookIsDisplayed(searchQuery);
-                const titles = await bookStorePage.getBookTitles();
-                expect(titles).toContain(searchQuery);
+                // Poll rather than snapshot: the DemoQA table filters client-side,
+                // so the row list may not be settled the instant the fill resolves.
+                await expect
+                    .poll(() => bookStorePage.getBookTitles(), { timeout: 15000 })
+                    .toContain(searchQuery);
             });
         });
 
@@ -50,26 +54,37 @@ test.describe(
             });
 
             await test.step('Verify all displayed books contain the search term', async () => {
-                const titles = await bookStorePage.getBookTitles();
-                expect(titles.length).toBeGreaterThan(0);
-                for (const title of titles) {
-                    expect(title.toLowerCase()).toContain(searchQuery.toLowerCase());
-                }
+                await expect
+                    .poll(
+                        async () => {
+                            const titles = await bookStorePage.getBookTitles();
+                            return (
+                                titles.length > 0 &&
+                                titles.every((title) =>
+                                    title.toLowerCase().includes(searchQuery.toLowerCase())
+                                )
+                            );
+                        },
+                        { timeout: 15000 }
+                    )
+                    .toBe(true);
             });
         });
 
         test('Clear search restores all books', async ({ bookStorePage }) => {
             await test.step('Search and then clear', async () => {
                 await bookStorePage.searchForBook('Git');
-                const filteredCount = await bookStorePage.getBookCount();
-                expect(filteredCount).toBeGreaterThan(0);
+                await expect
+                    .poll(() => bookStorePage.getBookCount(), { timeout: 15000 })
+                    .toBeGreaterThan(0);
 
                 await bookStorePage.clearSearch();
             });
 
             await test.step('Verify all books are displayed again', async () => {
-                const totalCount = await bookStorePage.getBookCount();
-                expect(totalCount).toBeGreaterThanOrEqual(8);
+                await expect
+                    .poll(() => bookStorePage.getBookCount(), { timeout: 15000 })
+                    .toBeGreaterThanOrEqual(8);
             });
         });
 
