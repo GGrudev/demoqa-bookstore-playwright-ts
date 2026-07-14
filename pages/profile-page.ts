@@ -65,7 +65,9 @@ export default class ProfilePage extends BasePage {
     }
 
     async verifyNoBooksInProfile() {
-        await expect.poll(async () => (await this.getBookTitlesInProfile()).length).toBe(0);
+        await expect
+            .poll(async () => (await this.getBookTitlesInProfile()).length, { timeout: 15000 })
+            .toBe(0);
     }
 
     async deleteBookByIsbn(isbn: string) {
@@ -96,12 +98,13 @@ export default class ProfilePage extends BasePage {
 
     private async confirmWithOptionalAlert(confirmButton: Locator, waitToClose = true) {
         await expect(confirmButton).toBeVisible({ timeout: 10000 });
-        const alertPromise = this.page.waitForEvent('dialog', { timeout: 5000 }).catch(() => null);
+        // DemoQA sometimes follows the Bootstrap confirm with a native alert. Register a
+        // one-shot handler *before* clicking so the dialog is always accepted whenever it
+        // fires, instead of racing a fixed waitForEvent timeout that can miss a slow alert.
+        this.page.once('dialog', (dialog) => {
+            void dialog.accept().catch(() => undefined);
+        });
         await confirmButton.evaluate((button) => (button as HTMLButtonElement).click());
-        const nativeDialog = await alertPromise;
-        if (nativeDialog) {
-            await nativeDialog.accept();
-        }
         if (waitToClose) {
             await expect(confirmButton).toBeHidden({ timeout: 15000 });
         }

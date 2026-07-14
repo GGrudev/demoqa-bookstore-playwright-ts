@@ -1,9 +1,4 @@
-import {
-    getBaseUrl,
-    getApiBaseUrl,
-    getValidUserCredentials,
-    getInvalidUserCredentials,
-} from './environments';
+import { getValidUserCredentials, getInvalidUserCredentials } from './environments';
 
 export interface UserCredentials {
     userName: string;
@@ -141,42 +136,4 @@ export class TestDataBuilder {
     static getBookByIsbn(isbn: string): BookData | undefined {
         return this.getKnownBooks().find((book) => book.isbn === isbn);
     }
-
-    static getBaseUrl(): string {
-        return getBaseUrl();
-    }
-
-    static getApiBaseUrl(): string {
-        return getApiBaseUrl();
-    }
 }
-
-export const TestData = {
-    get URL(): string {
-        return getBaseUrl();
-    },
-
-    get apiURL(): string {
-        return getApiBaseUrl();
-    },
-
-    get validUser(): UserCredentials {
-        return TestDataBuilder.createValidUser();
-    },
-
-    get invalidUser(): UserCredentials {
-        return TestDataBuilder.createInvalidUser();
-    },
-
-    get randomUser(): RegistrationData {
-        return TestDataBuilder.createRandomUser();
-    },
-
-    get knownBooks(): BookData[] {
-        return TestDataBuilder.getKnownBooks();
-    },
-
-    get firstBook(): BookData {
-        return TestDataBuilder.getKnownBooks()[0];
-    },
-};

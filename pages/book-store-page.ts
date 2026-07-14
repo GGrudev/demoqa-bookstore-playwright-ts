@@ -14,6 +14,14 @@ export default class BookStorePage extends BasePage {
         this.bookRows = page.locator('tbody>tr');
     }
 
+    // The DemoQA book list is fetched asynchronously after navigation. Waiting for
+    // the first row to render prevents searches from running against an empty table
+    // (a race that otherwise surfaces as intermittent "0 results" failures).
+    async waitForBooksLoaded() {
+        await expect(this.booksTable).toBeVisible({ timeout: 20000 });
+        await expect(this.booksTable.locator('tbody a').first()).toBeVisible({ timeout: 20000 });
+    }
+
     async searchForBook(query: string) {
         await this.searchBox.fill(query);
     }

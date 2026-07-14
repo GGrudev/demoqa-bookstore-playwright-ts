@@ -1,6 +1,6 @@
 # DemoQA Book Store Test Automation Framework
 
-[![CI](https://github.com/YOUR_GITHUB_USERNAME/demoqa-bookstore/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_GITHUB_USERNAME/demoqa-bookstore/actions/workflows/ci.yml)
+[![CI](https://github.com/GGrudev/demoqa-bookstore-playwright-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/GGrudev/demoqa-bookstore-playwright-ts/actions/workflows/ci.yml)
 ![Playwright](https://img.shields.io/badge/Playwright-1.50-blue?logo=playwright)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
@@ -16,8 +16,6 @@ This project demonstrates senior QA automation practices on a public demo applic
 - **Isolated test data** — API-created users with automatic cleanup for parallel-safe runs.
 - **Hybrid setup** — API preconditions with UI verification for reliable end-to-end scenarios.
 - **CI-ready** — lint, format checks, API tests, and smoke tests run on every push via GitHub Actions.
-
-> **Note:** Replace `YOUR_GITHUB_USERNAME` in the CI badge URL after you push the repository to GitHub.
 
 ## Tech Stack
 
@@ -242,8 +240,8 @@ Smoke login tests use fallback credentials by default. For a dedicated CI accoun
 ## Setup
 
 ```bash
-git clone https://github.com/YOUR_GITHUB_USERNAME/demoqa-bookstore.git
-cd demoqa-bookstore
+git clone https://github.com/GGrudev/demoqa-bookstore-playwright-ts.git
+cd demoqa-bookstore-playwright-ts
 npm install
 npx playwright install
 ```
@@ -312,19 +310,6 @@ npm run format:check
 DemoQA protects UI registration with reCAPTCHA, so the project does not automate the full UI registration submit flow. The `RegisterPage` object and login-to-register navigation test validate navigation and form visibility only. User creation for test setup is handled through the API.
 
 The application is a public demo site, so occasional upstream slowness or data resets are possible. API-created users and automatic cleanup reduce the impact of shared environment state.
-
-## Publishing To GitHub
-
-```bash
-git init
-git add .
-git commit -m "Initial commit: Playwright Book Store automation framework"
-git branch -M main
-git remote add origin https://github.com/YOUR_GITHUB_USERNAME/demoqa-bookstore.git
-git push -u origin main
-```
-
-After pushing, update the CI badge URL in this README with your GitHub username.
 
 ## Planned Improvements
 

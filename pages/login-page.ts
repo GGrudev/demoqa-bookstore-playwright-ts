@@ -3,26 +3,20 @@ import { BasePage } from '../utils/base-page';
 
 export default class LoginPage extends BasePage {
     readonly heading: Locator;
-    readonly welcomeText: Locator;
     readonly userNameInput: Locator;
     readonly passwordInput: Locator;
     readonly loginButton: Locator;
     readonly newUserButton: Locator;
-    readonly userNameLabel: Locator;
-    readonly passwordLabel: Locator;
     readonly invalidCredentialsMessage: Locator;
 
     constructor(page: Page) {
         super(page);
 
         this.heading = page.getByRole('heading', { name: 'Login in Book Store' });
-        this.welcomeText = page.getByRole('heading');
         this.userNameInput = page.locator('#userName');
         this.passwordInput = page.locator('#password');
         this.loginButton = page.locator('#login');
         this.newUserButton = page.locator('#newUser');
-        this.userNameLabel = page.locator('#userName-label');
-        this.passwordLabel = page.locator('#password-label');
         this.invalidCredentialsMessage = page.locator('#name');
     }
 
