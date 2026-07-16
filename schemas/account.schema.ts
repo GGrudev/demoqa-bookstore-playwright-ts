@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { BookSchema } from './book.schema';
 
+export const CredentialsRequestSchema = z.strictObject({
+    userName: z.string().min(1),
+    password: z.string().min(1),
+});
+
 export const CreateUserResponseSchema = z.strictObject({
     userID: z.string().min(1),
     username: z.string().min(1),
@@ -29,3 +34,4 @@ export type CreateUserResponse = z.infer<typeof CreateUserResponseSchema>;
 export type UserResponse = z.infer<typeof UserResponseSchema>;
 export type TokenResponse = z.infer<typeof TokenResponseSchema>;
 export type ApiError = z.infer<typeof ApiErrorSchema>;
+export type CredentialsRequest = z.infer<typeof CredentialsRequestSchema>;

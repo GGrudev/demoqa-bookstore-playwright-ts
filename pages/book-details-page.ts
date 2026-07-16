@@ -51,7 +51,13 @@ export default class BookDetailsPage extends BasePage {
     }
 
     async addToCollection() {
+        const dialogHandled = this.page.waitForEvent('dialog').then(async (dialog) => {
+            expect(dialog.message()).toContain('Book added to your collection.');
+            await dialog.accept();
+        });
+
         await this.addToCollectionButton.click();
+        await dialogHandled;
     }
 
     async goBackToBookStore() {

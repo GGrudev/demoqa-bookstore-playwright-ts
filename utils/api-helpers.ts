@@ -1,7 +1,14 @@
 import { APIRequestContext } from '@playwright/test';
 import { getApiBaseUrl } from '../config/environments';
-import { BooksListSchema, BooksList } from '../schemas/book.schema';
 import {
+    AddBooksRequestSchema,
+    BooksListSchema,
+    BooksList,
+    DeleteBookRequestSchema,
+    ReplaceBookRequestSchema,
+} from '../schemas/book.schema';
+import {
+    CredentialsRequestSchema,
     CreateUserResponseSchema,
     UserResponseSchema,
     TokenResponseSchema,
@@ -29,16 +36,18 @@ export class ApiHelpers {
     // used for success are validated here and return a fully typed body.
 
     async createUser(userName: string, password: string): Promise<ApiResult<unknown>> {
+        const data = CredentialsRequestSchema.parse({ userName, password });
         const response = await this.request.post(`${this.baseUrl}/Account/v1/User`, {
-            data: { userName, password },
+            data,
         });
 
         return { status: response.status(), body: await response.json() };
     }
 
     async generateToken(userName: string, password: string): Promise<ApiResult<TokenResponse>> {
+        const data = CredentialsRequestSchema.parse({ userName, password });
         const response = await this.request.post(`${this.baseUrl}/Account/v1/GenerateToken`, {
-            data: { userName, password },
+            data,
         });
 
         return {
@@ -48,8 +57,9 @@ export class ApiHelpers {
     }
 
     async isAuthorized(userName: string, password: string): Promise<ApiResult<unknown>> {
+        const data = CredentialsRequestSchema.parse({ userName, password });
         const response = await this.request.post(`${this.baseUrl}/Account/v1/Authorized`, {
-            data: { userName, password },
+            data,
         });
 
         return { status: response.status(), body: await response.json() };
@@ -99,9 +109,10 @@ export class ApiHelpers {
         isbns: string[]
     ): Promise<ApiResult<unknown>> {
         const collectionOfIsbns = isbns.map((isbn) => ({ isbn }));
+        const data = AddBooksRequestSchema.parse({ userId, collectionOfIsbns });
         const response = await this.request.post(`${this.baseUrl}/BookStore/v1/Books`, {
             headers: { Authorization: `Bearer ${token}` },
-            data: { userId, collectionOfIsbns },
+            data,
         });
 
         return { status: response.status(), body: await response.json() };
@@ -112,9 +123,10 @@ export class ApiHelpers {
         token: string,
         isbn: string
     ): Promise<{ status: number }> {
+        const data = DeleteBookRequestSchema.parse({ isbn, userId });
         const response = await this.request.delete(`${this.baseUrl}/BookStore/v1/Book`, {
             headers: { Authorization: `Bearer ${token}` },
-            data: { isbn, userId },
+            data,
         });
 
         return { status: response.status() };
@@ -135,11 +147,12 @@ export class ApiHelpers {
         currentIsbn: string,
         newIsbn: string
     ): Promise<ApiResult<unknown>> {
+        const data = ReplaceBookRequestSchema.parse({ userId, isbn: newIsbn });
         const response = await this.request.put(
             `${this.baseUrl}/BookStore/v1/Books/${currentIsbn}`,
             {
                 headers: { Authorization: `Bearer ${token}` },
-                data: { userId, isbn: newIsbn },
+                data,
             }
         );
 

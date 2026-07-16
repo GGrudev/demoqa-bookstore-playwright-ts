@@ -1,4 +1,4 @@
-import { test as baseTest } from '@playwright/test';
+import { expect as baseExpect, test as baseTest } from '@playwright/test';
 import LoginPage from '../pages/login-page';
 import RegisterPage from '../pages/register-page';
 import BookStorePage from '../pages/book-store-page';
@@ -56,7 +56,28 @@ const testPages = baseTest.extend<Pages>({
         try {
             await use(apiTestUser);
         } finally {
-            await apiHelpers.deleteUser(apiTestUser.userId, apiTestUser.token);
+            // Generating a token invalidates the user's previous token in DemoQA.
+            // Refresh it during teardown so tests that exercise token rotation
+            // cannot leave their isolated account behind.
+            const cleanupTokenResponse = await apiHelpers.generateToken(
+                apiTestUser.userName,
+                apiTestUser.password
+            );
+            const cleanupToken = cleanupTokenResponse.body.token ?? '';
+            baseExpect(
+                cleanupTokenResponse.status,
+                `Failed to generate cleanup token for API test user ${apiTestUser.userId}`
+            ).toBe(200);
+            baseExpect(
+                cleanupToken,
+                `Cleanup token was empty for API test user ${apiTestUser.userId}`
+            ).not.toBe('');
+
+            const cleanupResponse = await apiHelpers.deleteUser(apiTestUser.userId, cleanupToken);
+            baseExpect(
+                cleanupResponse.status,
+                `Failed to delete API test user ${apiTestUser.userId}`
+            ).toBe(204);
         }
     },
     loggedInApiUser: async ({ page, apiTestUser }, use) => {

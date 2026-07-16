@@ -36,6 +36,7 @@ test.describe(
                 });
 
                 await test.step('Verify user is logged in', async () => {
+                    await expect(loginPage.page).toHaveURL(/\/profile$/);
                     await loginPage.header.expectLoggedIn(validUser.userName);
                 });
             }
@@ -59,8 +60,7 @@ test.describe(
             });
 
             await test.step('Verify validation errors are shown', async () => {
-                await expect(loginPage.userNameInput).toHaveCSS('border-color', 'rgb(220, 53, 69)');
-                await expect(loginPage.passwordInput).toHaveCSS('border-color', 'rgb(220, 53, 69)');
+                await loginPage.verifyRequiredFieldValidation();
             });
         });
 
@@ -74,6 +74,7 @@ test.describe(
 
             await test.step('Logout and verify login page is displayed', async () => {
                 await loginPage.header.logout();
+                await expect(loginPage.page).toHaveURL(/\/login$/);
                 await expect(loginPage.loginButton).toBeVisible();
             });
         });
@@ -84,6 +85,7 @@ test.describe(
             });
 
             await test.step('Verify register page is displayed', async () => {
+                await expect(registerPage.page).toHaveURL(/\/register$/);
                 await registerPage.verifyRegisterPageElements();
             });
         });

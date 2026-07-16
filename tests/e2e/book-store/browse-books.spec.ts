@@ -72,6 +72,8 @@ test.describe(
         });
 
         test('Clear search restores all books', async ({ bookStorePage }) => {
+            const initialBookCount = await bookStorePage.getBookCount();
+
             await test.step('Search and then clear', async () => {
                 await bookStorePage.searchForBook('Git');
                 await expect
@@ -84,7 +86,7 @@ test.describe(
             await test.step('Verify all books are displayed again', async () => {
                 await expect
                     .poll(() => bookStorePage.getBookCount(), { timeout: 15000 })
-                    .toBeGreaterThanOrEqual(8);
+                    .toBe(initialBookCount);
             });
         });
 
@@ -96,6 +98,9 @@ test.describe(
 
             await test.step('Click on a book title', async () => {
                 await bookStorePage.clickBookByTitle(expectedBook.title);
+                await expect(bookDetailsPage.page).toHaveURL((url) => {
+                    return url.searchParams.get('search') === expectedBook.isbn;
+                });
             });
 
             await test.step('Verify book details page is displayed', async () => {
@@ -112,6 +117,9 @@ test.describe(
 
             await test.step('Navigate to book details', async () => {
                 await bookStorePage.clickBookByTitle(expectedBook.title);
+                await expect(bookDetailsPage.page).toHaveURL((url) => {
+                    return url.searchParams.get('search') === expectedBook.isbn;
+                });
             });
 
             await test.step('Verify all book details', async () => {
@@ -120,6 +128,7 @@ test.describe(
 
             await test.step('Navigate back to book store', async () => {
                 await bookDetailsPage.goBackToBookStore();
+                await expect(bookStorePage.page).toHaveURL(/\/books$/);
                 await expect(bookStorePage.booksTable).toBeVisible();
             });
         });

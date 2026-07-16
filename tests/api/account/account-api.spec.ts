@@ -92,6 +92,9 @@ test.describe(
                 const response = await apiHelpers.createUser('weakPassUser', 'abc');
 
                 expect(response.status).toBe(400);
+                const error = parseApiResponse(ApiErrorSchema, response.body);
+                expect(error.code).toBe('1300');
+                expect(error.message).toContain('Passwords must have');
             });
         });
 
@@ -103,6 +106,9 @@ test.describe(
                 );
 
                 expect(response.status).toBe(406);
+                const error = parseApiResponse(ApiErrorSchema, response.body);
+                expect(error.code).toBe('1204');
+                expect(error.message).toBe('User exists!');
             });
         });
     }
