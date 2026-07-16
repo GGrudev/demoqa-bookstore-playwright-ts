@@ -1,6 +1,7 @@
 import { test, expect } from '../../../fixtures/page-fixtures';
 import { TestDataBuilder } from '../../../config/test-data';
-import { BookSchema } from '../../../schemas/book.schema';
+import { AddBooksResponseSchema, BookSchema } from '../../../schemas/book.schema';
+import { ApiErrorSchema, UserResponseSchema } from '../../../schemas/account.schema';
 import { parseApiResponse } from '../../../utils/schema-validators';
 
 test.describe(
@@ -54,6 +55,9 @@ test.describe(
                 const response = await apiHelpers.getBookByIsbn('0000000000000');
 
                 expect(response.status).toBe(400);
+                const error = parseApiResponse(ApiErrorSchema, response.body);
+                expect(error.code).toBe('1205');
+                expect(error.message).toContain('ISBN supplied is not available');
             });
         });
 
@@ -81,6 +85,8 @@ test.describe(
                 );
 
                 expect(response.status).toBe(201);
+                const result = parseApiResponse(AddBooksResponseSchema, response.body);
+                expect(result.books).toContainEqual({ isbn: bookToAdd.isbn });
             });
 
             await test.step('Verify the book is present in the user collection', async () => {
@@ -96,6 +102,61 @@ test.describe(
             });
         });
 
+        for (const scenario of [
+            { name: 'missing token', token: '' },
+            { name: 'invalid token', token: 'not-a-valid-token' },
+        ]) {
+            test(`Add book rejects ${scenario.name}`, async ({ apiHelpers, apiTestUser }) => {
+                const bookToAdd = TestDataBuilder.getKnownBooks()[0];
+
+                const response = await apiHelpers.addBooksToUser(
+                    apiTestUser.userId,
+                    scenario.token,
+                    [bookToAdd.isbn]
+                );
+
+                expect(response.status).toBe(401);
+                const error = parseApiResponse(ApiErrorSchema, response.body);
+                expect(error.code).toBe('1200');
+                expect(error.message).toBe('User not authorized!');
+            });
+        }
+
+        test('Add book rejects an invalid ISBN', async ({ apiHelpers, apiTestUser }) => {
+            const response = await apiHelpers.addBooksToUser(
+                apiTestUser.userId,
+                apiTestUser.token,
+                ['0000000000000']
+            );
+
+            expect(response.status).toBe(400);
+            const error = parseApiResponse(ApiErrorSchema, response.body);
+            expect(error.code).toBe('1205');
+            expect(error.message).toContain('ISBN supplied is not available');
+        });
+
+        test('Add book rejects a duplicate ISBN', async ({ apiHelpers, apiTestUser }) => {
+            const bookToAdd = TestDataBuilder.getKnownBooks()[0];
+            const firstResponse = await apiHelpers.addBooksToUser(
+                apiTestUser.userId,
+                apiTestUser.token,
+                [bookToAdd.isbn]
+            );
+            expect(firstResponse.status).toBe(201);
+            parseApiResponse(AddBooksResponseSchema, firstResponse.body);
+
+            const duplicateResponse = await apiHelpers.addBooksToUser(
+                apiTestUser.userId,
+                apiTestUser.token,
+                [bookToAdd.isbn]
+            );
+
+            expect(duplicateResponse.status).toBe(400);
+            const error = parseApiResponse(ApiErrorSchema, duplicateResponse.body);
+            expect(error.code).toBe('1210');
+            expect(error.message).toBe("ISBN already present in the User's Collection!");
+        });
+
         test('Delete book from user collection', async ({ apiHelpers, apiTestUser }) => {
             const bookToDelete = TestDataBuilder.getKnownBooks()[0];
 
@@ -107,6 +168,9 @@ test.describe(
                 );
 
                 expect(addResponse.status).toBe(201);
+                expect(
+                    parseApiResponse(AddBooksResponseSchema, addResponse.body).books
+                ).toContainEqual({ isbn: bookToDelete.isbn });
             });
 
             await test.step('Delete the book from the user collection', async () => {
@@ -131,6 +195,29 @@ test.describe(
             });
         });
 
+        test('Delete all books from user collection', async ({ apiHelpers, apiTestUser }) => {
+            const booksToDelete = TestDataBuilder.getKnownBooks().slice(0, 2);
+            const addResponse = await apiHelpers.addBooksToUser(
+                apiTestUser.userId,
+                apiTestUser.token,
+                booksToDelete.map((book) => book.isbn)
+            );
+            expect(addResponse.status).toBe(201);
+            expect(parseApiResponse(AddBooksResponseSchema, addResponse.body).books).toHaveLength(
+                2
+            );
+
+            const deleteResponse = await apiHelpers.deleteAllBooksFromUser(
+                apiTestUser.userId,
+                apiTestUser.token
+            );
+            expect(deleteResponse.status).toBe(204);
+
+            const userResponse = await apiHelpers.getUser(apiTestUser.userId, apiTestUser.token);
+            expect(userResponse.status).toBe(200);
+            expect(userResponse.body.books).toEqual([]);
+        });
+
         test('Replace book in user collection', async ({ apiHelpers, apiTestUser }) => {
             const originalBook = TestDataBuilder.getKnownBooks()[0];
             const replacementBook = TestDataBuilder.getKnownBooks()[1];
@@ -143,6 +230,11 @@ test.describe(
                 );
 
                 expect(response.status).toBe(201);
+                expect(
+                    parseApiResponse(AddBooksResponseSchema, response.body).books
+                ).toContainEqual({
+                    isbn: originalBook.isbn,
+                });
             });
 
             await test.step('Replace book via API', async () => {
@@ -154,6 +246,8 @@ test.describe(
                 );
 
                 expect(response.status).toBe(200);
+                const result = parseApiResponse(UserResponseSchema, response.body);
+                expect(result.books.map((book) => book.isbn)).toContain(replacementBook.isbn);
             });
 
             await test.step('Verify collection contains replacement book only', async () => {

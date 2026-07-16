@@ -35,6 +35,7 @@ test.describe(
             });
 
             await test.step('Verify book store page is displayed', async () => {
+                await expect(bookStorePage.page).toHaveURL(/\/books$/);
                 await expect(bookStorePage.booksTable).toBeVisible();
             });
         });
@@ -50,6 +51,7 @@ test.describe(
             });
 
             await test.step('Verify redirected to login page', async () => {
+                await expect(loginPage.page).toHaveURL(/\/login$/);
                 await expect(loginPage.loginButton).toBeVisible();
             });
         });

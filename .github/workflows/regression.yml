@@ -57,6 +57,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Typecheck
+        run: npm run typecheck
+
       - name: Check formatting
         run: npm run format:check
 
@@ -127,10 +130,12 @@ jobs:
         run: npm ci
 
       - name: Resolve Playwright version
+        if: matrix.id != 'api'
         id: playwright-version
         run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
 
       - name: Cache Playwright browsers
+        if: matrix.id != 'api'
         id: playwright-cache
         uses: actions/cache@v4
         with:
@@ -138,11 +143,11 @@ jobs:
           key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
 
       - name: Install Playwright browser (cache miss)
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        if: matrix.id != 'api' && steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
 
       - name: Install Playwright OS dependencies (cache hit)
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        if: matrix.id != 'api' && steps.playwright-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
 
       - name: Run ${{ matrix.id }} tests

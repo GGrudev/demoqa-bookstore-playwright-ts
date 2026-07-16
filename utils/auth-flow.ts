@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test';
+import { Page, expect } from '@playwright/test';
 import LoginPage from '../pages/login-page';
 
 type UserCredentials = {
@@ -13,5 +13,6 @@ export async function loginViaUi(page: Page, credentials: UserCredentials): Prom
 
     await loginPage.goToLogin();
     await loginPage.login(credentials.userName, credentials.password);
+    await expect(page).toHaveURL(/\/profile$/);
     await loginPage.header.expectLoggedIn(credentials.userName);
 }

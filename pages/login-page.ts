@@ -40,6 +40,13 @@ export default class LoginPage extends BasePage {
         await expect(this.invalidCredentialsMessage).toHaveText('Invalid username or password!');
     }
 
+    async verifyRequiredFieldValidation() {
+        // DemoQA exposes required-field state through Bootstrap's validation class
+        // but does not render an accessible validation message for these inputs.
+        await expect(this.userNameInput).toHaveClass(/is-invalid/);
+        await expect(this.passwordInput).toHaveClass(/is-invalid/);
+    }
+
     async goToRegister() {
         await this.newUserButton.click();
     }
