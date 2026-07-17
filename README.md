@@ -174,19 +174,19 @@ Two workflows keep **PR quality checks** separate from **live DemoQA traffic**, 
 
 ### CI (`ci.yml`) — push, pull request, and manual dispatch
 
-| Trigger              | What runs                                                                 |
-| -------------------- | ------------------------------------------------------------------------- |
-| **Push / PR**        | Lint + typecheck + format only (no DemoQA traffic)                        |
-| **Manual dispatch**  | Quality gate, then optional `api`, `smoke`, or `both` against DemoQA      |
+| Trigger             | What runs                                                            |
+| ------------------- | -------------------------------------------------------------------- |
+| **Push / PR**       | Lint + typecheck + format only (no DemoQA traffic)                   |
+| **Manual dispatch** | Quality gate, then optional `api`, `smoke`, or `both` against DemoQA |
 
 Trigger live suites from GitHub: **Actions → CI → Run workflow** and choose the suite.
 
-| Manual suite | What it runs                         |
-| ------------ | ------------------------------------ |
-| `none`       | Quality gate only                    |
-| `api`        | `npm run test:api` (4 workers)       |
-| `smoke`      | `npm run test:smoke` (2 workers)     |
-| `both`       | API + smoke jobs in parallel         |
+| Manual suite | What it runs                     |
+| ------------ | -------------------------------- |
+| `none`       | Quality gate only                |
+| `api`        | `npm run test:api` (4 workers)   |
+| `smoke`      | `npm run test:smoke` (2 workers) |
+| `both`       | API + smoke jobs in parallel     |
 
 ### Regression (`regression.yml`) — manual & weekly schedule
 
@@ -244,10 +244,10 @@ npm run test:shard:2   # second half
 
 UI login tests use fallback credentials by default. For a dedicated account in manual CI smoke / regression runs, add repository secrets:
 
-| Secret            | Description                                      |
-| ----------------- | ------------------------------------------------ |
-| `DEMOQA_USERNAME` | DemoQA username for UI smoke / regression tests  |
-| `DEMOQA_PASSWORD` | DemoQA password for UI smoke / regression tests  |
+| Secret            | Description                                     |
+| ----------------- | ----------------------------------------------- |
+| `DEMOQA_USERNAME` | DemoQA username for UI smoke / regression tests |
+| `DEMOQA_PASSWORD` | DemoQA password for UI smoke / regression tests |
 
 ## Setup
 
