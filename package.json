@@ -2,16 +2,15 @@
     "name": "demoqa-bookstore",
     "version": "1.0.0",
     "description": "Book Store Test Automation Framework — UI & API Testing with Playwright",
-    "main": "index.js",
     "scripts": {
         "test": "playwright test",
         "test:headed": "playwright test --headed",
         "test:ui": "playwright test --ui",
         "test:debug": "playwright test --debug",
-        "test:e2e": "playwright test --grep @e2e",
-        "test:api": "playwright test --grep @api",
+        "test:e2e": "playwright test --project=chromium --project=authenticated",
+        "test:api": "playwright test --project=api",
         "test:smoke": "playwright test --grep @smoke",
-        "test:regression": "playwright test",
+        "test:regression": "playwright test --project=api --project=chromium --project=authenticated",
         "test:shard:1": "playwright test --shard=1/2",
         "test:shard:2": "playwright test --shard=2/2",
         "test:report": "playwright show-report",
@@ -20,6 +19,9 @@
         "typecheck": "tsc --noEmit",
         "format": "prettier --write \"**/*.{ts,json,md}\"",
         "format:check": "prettier --check \"**/*.{ts,json,md}\""
+    },
+    "engines": {
+        "node": ">=20"
     },
     "keywords": [
         "playwright",
@@ -33,6 +35,7 @@
     "author": "GGrudev",
     "license": "MIT",
     "devDependencies": {
+        "@axe-core/playwright": "^4.12.1",
         "@playwright/test": "^1.50.1",
         "@types/node": "^22.13.1",
         "@typescript-eslint/eslint-plugin": "^8.64.0",

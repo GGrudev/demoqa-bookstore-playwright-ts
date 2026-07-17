@@ -9,7 +9,6 @@ export default class RegisterPage extends BasePage {
     readonly passwordInput: Locator;
     readonly registerButton: Locator;
     readonly backToLoginButton: Locator;
-    readonly recaptcha: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -22,19 +21,6 @@ export default class RegisterPage extends BasePage {
         this.passwordInput = page.locator('#password');
         this.registerButton = page.locator('#register');
         this.backToLoginButton = page.locator('#gotologin');
-        this.recaptcha = page.locator('.recaptcha-checkbox-border');
-    }
-
-    async fillRegistrationForm(
-        firstName: string,
-        lastName: string,
-        userName: string,
-        password: string
-    ) {
-        await this.firstNameInput.fill(firstName);
-        await this.lastNameInput.fill(lastName);
-        await this.userNameInput.fill(userName);
-        await this.passwordInput.fill(password);
     }
 
     async verifyRegisterPageElements() {
@@ -47,9 +33,5 @@ export default class RegisterPage extends BasePage {
             this.registerButton,
             this.backToLoginButton
         );
-    }
-
-    async goBackToLogin() {
-        await this.backToLoginButton.click();
     }
 }

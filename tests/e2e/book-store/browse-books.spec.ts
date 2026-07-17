@@ -19,7 +19,7 @@ test.describe(
             },
             async ({ bookStorePage }) => {
                 await test.step('Verify books table is visible', async () => {
-                    await expect(bookStorePage.booksTable).toBeVisible();
+                    await bookStorePage.expectBooksTableVisible();
                 });
 
                 await test.step('Verify books are listed', async () => {
@@ -98,14 +98,11 @@ test.describe(
 
             await test.step('Click on a book title', async () => {
                 await bookStorePage.clickBookByTitle(expectedBook.title);
-                await expect(bookDetailsPage.page).toHaveURL((url) => {
-                    return url.searchParams.get('search') === expectedBook.isbn;
-                });
+                await bookStorePage.expectBookDetailsUrl(expectedBook.isbn);
             });
 
             await test.step('Verify book details page is displayed', async () => {
-                await expect(bookDetailsPage.isbnValue).toHaveText(expectedBook.isbn);
-                await expect(bookDetailsPage.titleValue).toHaveText(expectedBook.title);
+                await bookDetailsPage.expectBookDetailsVisible(expectedBook);
             });
         });
 
@@ -117,9 +114,7 @@ test.describe(
 
             await test.step('Navigate to book details', async () => {
                 await bookStorePage.clickBookByTitle(expectedBook.title);
-                await expect(bookDetailsPage.page).toHaveURL((url) => {
-                    return url.searchParams.get('search') === expectedBook.isbn;
-                });
+                await bookStorePage.expectBookDetailsUrl(expectedBook.isbn);
             });
 
             await test.step('Verify all book details', async () => {
@@ -129,7 +124,7 @@ test.describe(
             await test.step('Navigate back to book store', async () => {
                 await bookDetailsPage.goBackToBookStore();
                 await expect(bookStorePage.page).toHaveURL(/\/books$/);
-                await expect(bookStorePage.booksTable).toBeVisible();
+                await bookStorePage.expectBooksTableVisible();
             });
         });
     }

@@ -47,6 +47,16 @@ export default class LoginPage extends BasePage {
         await expect(this.passwordInput).toHaveClass(/is-invalid/);
     }
 
+    async verifyEmptyCredentialsRejected() {
+        await this.loginButton.click();
+        await this.verifyRequiredFieldValidation();
+    }
+
+    async expectOnLoginPage() {
+        await expect(this.page).toHaveURL(/\/login$/);
+        await expect(this.loginButton).toBeVisible();
+    }
+
     async goToRegister() {
         await this.newUserButton.click();
     }

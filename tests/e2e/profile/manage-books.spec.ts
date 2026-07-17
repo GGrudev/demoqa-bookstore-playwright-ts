@@ -3,6 +3,7 @@ import { TestDataBuilder } from '../../../config/test-data';
 import { loginViaUi } from '../../../utils/auth-flow';
 import { AddBooksResponseSchema } from '../../../schemas/book.schema';
 import { parseApiResponse } from '../../../utils/schema-validators';
+import { attachJson } from '../../../utils/test-diagnostics';
 
 test.describe(
     'Profile - Manage book collection',
@@ -33,6 +34,12 @@ test.describe(
             },
             async ({ apiHelpers, apiTestUser, page, profilePage }) => {
                 const bookToAdd = TestDataBuilder.getKnownBooks()[0];
+                await attachJson('collection-context', {
+                    userId: apiTestUser.userId,
+                    userName: apiTestUser.userName,
+                    isbn: bookToAdd.isbn,
+                    title: bookToAdd.title,
+                });
 
                 await test.step('Prepare user collection through API', async () => {
                     const response = await apiHelpers.addBooksToUser(

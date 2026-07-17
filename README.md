@@ -1,8 +1,9 @@
 # DemoQA Book Store Test Automation Framework
 
 [![CI](https://github.com/GGrudev/demoqa-bookstore-playwright-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/GGrudev/demoqa-bookstore-playwright-ts/actions/workflows/ci.yml)
-![Playwright](https://img.shields.io/badge/Playwright-1.50-blue?logo=playwright)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript&logoColor=white)
+[![Regression](https://github.com/GGrudev/demoqa-bookstore-playwright-ts/actions/workflows/regression.yml/badge.svg)](https://github.com/GGrudev/demoqa-bookstore-playwright-ts/actions/workflows/regression.yml)
+![Playwright](https://img.shields.io/badge/Playwright-1.58-blue?logo=playwright)
+![TypeScript](https://img.shields.io/badge/TypeScript-6.x-blue?logo=typescript&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 
 End-to-end UI and API test automation for the [DemoQA Book Store](https://demoqa.com/books), built with Playwright and TypeScript.
@@ -15,31 +16,32 @@ This project demonstrates senior QA automation practices on a public demo applic
 - **Test pyramid** — fast API coverage plus targeted UI and hybrid flows.
 - **Isolated test data** — API-created users with automatic cleanup for parallel-safe runs.
 - **Hybrid setup** — API preconditions with UI verification for reliable end-to-end scenarios.
-- **CI-ready** — lint, format checks, API tests, and smoke tests run on every push via GitHub Actions.
+- **CI-ready** — lint/typecheck/format on every PR; live DemoQA API/smoke suites stay in CI/CD via manual dispatch, plus weekly/manual full regression.
+- **Selective component POM** — shared UI (`Header`, `BooksTable`, `ConfirmDialog`) composed into page objects where reuse pays off.
 
 ## Tech Stack
 
-| Layer       | Tools                                         |
-| ----------- | --------------------------------------------- |
-| Test runner | [Playwright](https://playwright.dev/)         |
-| Language    | TypeScript (strict mode)                      |
-| Patterns    | Page Object Model, custom fixtures, test tags |
-| Quality     | ESLint, Prettier, Zod (API contracts)         |
-| CI          | GitHub Actions                                |
+| Layer       | Tools                                                    |
+| ----------- | -------------------------------------------------------- |
+| Test runner | [Playwright](https://playwright.dev/)                    |
+| Language    | TypeScript (strict mode)                                 |
+| Patterns    | Page Object Model, component composition, fixtures, tags |
+| Quality     | ESLint, Prettier, TypeScript, Zod, axe-core              |
+| CI          | GitHub Actions                                           |
 
 ## Project Structure
 
 ```text
-.github/workflows/   CI pipeline (lint, format, API, smoke)
-components/          Reusable UI component objects (e.g. Header) composed into pages
+.github/workflows/   Quality CI + scheduled/manual regression
+components/          Shared UI components (Header, BooksTable, ConfirmDialog)
 config/              Environment config and test data builders
 fixtures/            Custom Playwright fixtures and per-test API user lifecycle
-schemas/             Zod runtime contracts for DemoQA API responses
-pages/               Page Object classes
+schemas/             Zod runtime contracts for DemoQA API request/response shapes
+pages/               Page Object classes (compose components + page workflows)
 tests/
-  api/               API contract and workflow tests
+  api/               API contract and workflow tests (`api` project)
   e2e/               UI and hybrid UI/API tests
-utils/               BasePage, API helpers, and auth utilities
+utils/               BasePage, API helpers, auth, diagnostics
 ```
 
 ## Architecture
@@ -59,7 +61,7 @@ flowchart TB
     subgraph pages [Page Objects]
         PO[Login / BookStore / Profile / ...]
         BP[BasePage]
-        HDR[Header component]
+        COMP[Header / BooksTable / ConfirmDialog]
     end
 
     subgraph utils [Utils & Config]
@@ -75,7 +77,7 @@ flowchart TB
     PF --> ATU
     ATU --> AH
     PO --> BP
-    PO --> HDR
+    PO --> COMP
     AH --> ENV
     TD --> ENV
 ```
@@ -87,10 +89,15 @@ flowchart TB
 - `schemas/` — Zod schemas for book and account API contracts (`BookSchema`, `TokenResponseSchema`, etc.).
 - `utils/schema-validators.ts` — shared `parseApiResponse` helper for runtime validation.
 - `utils/base-page.ts` — minimal shared base: navigation, the composed `Header`, and an assertion helper.
-- `components/` — reusable UI component objects (e.g. `Header`) composed into page objects for shared UI like the session header.
-- `pages/` — page-specific locators and workflows.
+- `components/` — selective component POM: `Header`, `BooksTable`, and `ConfirmDialog` for shared UI/behavior only.
+- `pages/` — page-specific workflows that compose those components.
 - `fixtures/page-fixtures.ts` — injects page objects, API helpers, and isolated users into tests.
-- `tests/` — scenarios using `test.step` and tags such as `@api`, `@e2e`, `@smoke`.
+- `utils/test-diagnostics.ts` — attaches user/ISBN context to the report for hybrid failures.
+- `tests/` — scenarios using `test.step` and tags such as `@api`, `@e2e`, `@smoke`, `@a11y`.
+
+### Selector priority
+
+When adding locators, prefer (in order): `getByRole` / `getByLabel` → `getByText` → stable `#id` → CSS.
 
 ## Test Strategy
 
@@ -163,19 +170,25 @@ expect(error.code).toBe('1207');
 
 ## CI/CD Pipeline
 
-Two GitHub Actions workflows cover fast PR checks and on-demand/full regression.
+Two workflows keep **PR quality checks** separate from **live DemoQA traffic**, while still keeping API and smoke runs available in CI/CD.
 
-### CI (`ci.yml`) — every push & pull request
+### CI (`ci.yml`) — push, pull request, and manual dispatch
 
-| Job               | What it runs         | Parallelism |
-| ----------------- | -------------------- | ----------- |
-| **Lint & format** | ESLint + Prettier    | —           |
-| **API tests**     | `npm run test:api`   | 4 workers   |
-| **Smoke tests**   | `npm run test:smoke` | 2 workers   |
+| Trigger             | What runs                                                            |
+| ------------------- | -------------------------------------------------------------------- |
+| **Push / PR**       | Lint + typecheck + format only (no DemoQA traffic)                   |
+| **Manual dispatch** | Quality gate, then optional `api`, `smoke`, or `both` against DemoQA |
 
-API and smoke jobs run **in parallel** after the quality gate passes.
+Trigger live suites from GitHub: **Actions → CI → Run workflow** and choose the suite.
 
-### Regression (`regression.yml`) — manual & nightly
+| Manual suite | What it runs                     |
+| ------------ | -------------------------------- |
+| `none`       | Quality gate only                |
+| `api`        | `npm run test:api` (4 workers)   |
+| `smoke`      | `npm run test:smoke` (2 workers) |
+| `both`       | API + smoke jobs in parallel     |
+
+### Regression (`regression.yml`) — manual & weekly schedule
 
 Trigger from GitHub: **Actions → Regression → Run workflow**
 
@@ -183,22 +196,21 @@ Trigger from GitHub: **Actions → Regression → Run workflow**
 | -------------------- | ------------------------------------------- |
 | `smoke`              | Critical `@smoke` tests only                |
 | `api`                | All `@api` tests                            |
-| `e2e`                | All `@e2e` UI/hybrid tests                  |
+| `e2e`                | Chromium UI/hybrid projects                 |
 | `regression` / `all` | API + E2E jobs **in parallel** (full suite) |
 
-- **Schedule:** full regression nightly at 06:00 UTC
+- **Schedule:** full regression weekly (Sunday 06:00 UTC)
 - **Workers:** choose 1, 2, or 4 parallel Playwright workers per job (default: 2)
+- API-only matrix jobs skip Chromium install
 
-Failed runs upload Playwright HTML reports and test artifacts for debugging.
-
-JUnit XML is written to `test-results/junit.xml` on every run. CI publishes results to the GitHub Checks tab and uploads JUnit artifacts for download.
+Failed live-test runs upload Playwright HTML reports, JUnit XML, and failure artifacts. JUnit results are published to the GitHub Checks tab.
 
 ### Parallel execution
 
 Playwright runs tests in parallel at two levels:
 
 1. **Within a job** — `fullyParallel: true` and `PLAYWRIGHT_WORKERS` (configurable in Actions)
-2. **Across jobs** — API and smoke/regression API+E2E jobs run as separate parallel GitHub Actions jobs
+2. **Across jobs** — regression API + E2E run as separate parallel GitHub Actions jobs
 
 Locally:
 
@@ -230,12 +242,12 @@ npm run test:shard:2   # second half
 
 ### Optional CI secrets
 
-Smoke login tests use fallback credentials by default. For a dedicated CI account, add repository secrets:
+UI login tests use fallback credentials by default. For a dedicated account in manual CI smoke / regression runs, add repository secrets:
 
-| Secret            | Description                        |
-| ----------------- | ---------------------------------- |
-| `DEMOQA_USERNAME` | DemoQA username for UI smoke tests |
-| `DEMOQA_PASSWORD` | DemoQA password for UI smoke tests |
+| Secret            | Description                                     |
+| ----------------- | ----------------------------------------------- |
+| `DEMOQA_USERNAME` | DemoQA username for UI smoke / regression tests |
+| `DEMOQA_PASSWORD` | DemoQA password for UI smoke / regression tests |
 
 ## Setup
 
@@ -314,6 +326,7 @@ The application is a public demo site, so occasional upstream slowness or data r
 ## Planned Improvements
 
 - Add Docker support for a portable test execution environment
+- Expand axe coverage beyond the login page when targeting multi-page a11y gates
 
 ## License
 

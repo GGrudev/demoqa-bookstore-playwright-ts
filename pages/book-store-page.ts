@@ -1,63 +1,57 @@
-import { Locator, Page, expect } from '@playwright/test';
+import { Page, expect } from '@playwright/test';
 import { BasePage } from '../utils/base-page';
+import { BooksTable } from '../components/books-table';
 
 export default class BookStorePage extends BasePage {
-    readonly searchBox: Locator;
-    readonly booksTable: Locator;
-    readonly bookRows: Locator;
+    readonly books: BooksTable;
 
     constructor(page: Page) {
         super(page);
-
-        this.searchBox = page.locator('#searchBox');
-        this.booksTable = page.locator('div.books-wrapper table');
-        this.bookRows = page.locator('tbody>tr');
+        this.books = new BooksTable(page);
     }
 
-    // The DemoQA book list is fetched asynchronously after navigation. Waiting for
-    // the first row to render prevents searches from running against an empty table
-    // (a race that otherwise surfaces as intermittent "0 results" failures).
+    /** Root table locator — kept for tests that assert table visibility. */
+    get booksTable() {
+        return this.books.root;
+    }
+
     async waitForBooksLoaded() {
-        await expect(this.booksTable).toBeVisible({ timeout: 20000 });
-        await expect(this.booksTable.locator('tbody a').first()).toBeVisible({ timeout: 20000 });
+        await this.books.waitForLoaded();
+    }
+
+    async expectBooksTableVisible() {
+        await this.books.expectVisible();
     }
 
     async searchForBook(query: string) {
-        await this.searchBox.fill(query);
+        await this.books.search(query);
     }
 
     async clearSearch() {
-        await this.searchBox.clear();
+        await this.books.clearSearch();
     }
 
     async getBookTitles(): Promise<string[]> {
-        const titles: string[] = [];
-        const rows = await this.bookRows.all();
-        for (const row of rows) {
-            const titleLink = row.locator('a');
-            if (await titleLink.isVisible()) {
-                titles.push((await titleLink.innerText()).trim());
-            }
-        }
-        return titles;
-    }
-
-    async clickBookByTitle(title: string) {
-        const bookLink = this.page.locator('div>span>a', { hasText: title });
-        await bookLink.click();
+        return this.books.getTitles();
     }
 
     async getBookCount(): Promise<number> {
-        return (await this.getBookTitles()).length;
+        return this.books.getCount();
+    }
+
+    async clickBookByTitle(title: string) {
+        await this.books.titleLink(title).click();
     }
 
     async verifyBookIsDisplayed(title: string) {
-        const bookLink = this.page.locator('div>span>a', { hasText: title });
-        await expect(bookLink).toBeVisible();
+        await this.books.expectTitleVisible(title);
     }
 
     async verifyBookIsNotDisplayed(title: string) {
-        const bookLink = this.page.locator('div>span>a', { hasText: title });
-        await expect(bookLink).toBeHidden();
+        await this.books.expectTitleHidden(title);
+    }
+
+    async expectBookDetailsUrl(isbn: string) {
+        await expect(this.page).toHaveURL((url) => url.searchParams.get('search') === isbn);
     }
 }

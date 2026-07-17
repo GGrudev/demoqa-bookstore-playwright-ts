@@ -1,10 +1,24 @@
 name: CI
 
+# Push/PR: quality gate only (no DemoQA traffic).
+# Manual dispatch: optionally run API and/or smoke against DemoQA.
 on:
   push:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: Live DemoQA suite to run after the quality gate
+        required: true
+        default: none
+        type: choice
+        options:
+          - none
+          - api
+          - smoke
+          - both
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -16,16 +30,16 @@ permissions:
 
 jobs:
   quality:
-    name: Lint & format
+    name: Lint, typecheck & format
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.3.1
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v4.4.0
         with:
           node-version: 20
           cache: npm
@@ -45,15 +59,16 @@ jobs:
   api-tests:
     name: API tests (parallel)
     needs: quality
+    if: github.event_name == 'workflow_dispatch' && (github.event.inputs.suite == 'api' || github.event.inputs.suite == 'both')
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.3.1
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v4.4.0
         with:
           node-version: 20
           cache: npm
@@ -71,7 +86,7 @@ jobs:
 
       - name: Upload API Playwright report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: playwright-report-api
           path: playwright-report/
@@ -79,7 +94,7 @@ jobs:
 
       - name: Upload API JUnit report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: junit-api
           path: test-results/junit.xml
@@ -88,7 +103,7 @@ jobs:
 
       - name: Publish API JUnit results
         if: always()
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v1.9.1
         with:
           name: API Tests
           path: test-results/junit.xml
@@ -97,7 +112,7 @@ jobs:
 
       - name: Upload API test results
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: test-results-api
           path: test-results/
@@ -106,15 +121,16 @@ jobs:
   smoke-tests:
     name: Smoke tests (parallel)
     needs: quality
+    if: github.event_name == 'workflow_dispatch' && (github.event.inputs.suite == 'smoke' || github.event.inputs.suite == 'both')
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.3.1
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v4.4.0
         with:
           node-version: 20
           cache: npm
@@ -128,7 +144,7 @@ jobs:
 
       - name: Cache Playwright browsers
         id: playwright-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v4.2.4
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
@@ -151,7 +167,7 @@ jobs:
 
       - name: Upload smoke Playwright report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: playwright-report-smoke
           path: playwright-report/
@@ -159,7 +175,7 @@ jobs:
 
       - name: Upload smoke JUnit report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: junit-smoke
           path: test-results/junit.xml
@@ -168,7 +184,7 @@ jobs:
 
       - name: Publish smoke JUnit results
         if: always()
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v1.9.1
         with:
           name: Smoke Tests
           path: test-results/junit.xml
@@ -177,7 +193,7 @@ jobs:
 
       - name: Upload smoke test results
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: test-results-smoke
           path: test-results/
