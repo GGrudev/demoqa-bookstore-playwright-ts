@@ -18,9 +18,7 @@ test.describe(
 
             await test.step('Verify profile page elements', async () => {
                 await profilePage.header.expectLoggedIn(staticUser.userName);
-                await expect(profilePage.deleteAccountButton).toBeVisible();
-                await expect(profilePage.deleteAllBooksButton).toBeVisible();
-                await expect(profilePage.goToBookStoreButton).toBeVisible();
+                await profilePage.expectProfileControlsVisible();
             });
         });
 
@@ -36,7 +34,7 @@ test.describe(
 
             await test.step('Verify book store page is displayed', async () => {
                 await expect(bookStorePage.page).toHaveURL(/\/books$/);
-                await expect(bookStorePage.booksTable).toBeVisible();
+                await bookStorePage.expectBooksTableVisible();
             });
         });
 
@@ -51,8 +49,7 @@ test.describe(
             });
 
             await test.step('Verify redirected to login page', async () => {
-                await expect(loginPage.page).toHaveURL(/\/login$/);
-                await expect(loginPage.loginButton).toBeVisible();
+                await loginPage.expectOnLoginPage();
             });
         });
     }

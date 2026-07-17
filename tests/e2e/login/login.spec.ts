@@ -55,12 +55,8 @@ test.describe(
         });
 
         test('Login fails with empty credentials', async ({ loginPage }) => {
-            await test.step('Click login without entering credentials', async () => {
-                await loginPage.loginButton.click();
-            });
-
-            await test.step('Verify validation errors are shown', async () => {
-                await loginPage.verifyRequiredFieldValidation();
+            await test.step('Submit empty credentials and verify validation', async () => {
+                await loginPage.verifyEmptyCredentialsRejected();
             });
         });
 
@@ -74,8 +70,7 @@ test.describe(
 
             await test.step('Logout and verify login page is displayed', async () => {
                 await loginPage.header.logout();
-                await expect(loginPage.page).toHaveURL(/\/login$/);
-                await expect(loginPage.loginButton).toBeVisible();
+                await loginPage.expectOnLoginPage();
             });
         });
 

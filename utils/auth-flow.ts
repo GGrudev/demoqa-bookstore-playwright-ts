@@ -1,10 +1,6 @@
 import { Page, expect } from '@playwright/test';
 import LoginPage from '../pages/login-page';
-
-type UserCredentials = {
-    userName: string;
-    password: string;
-};
+import { UserCredentials } from '../config/test-data';
 
 // Logs in through the UI without persisting storage state. Used for hybrid tests
 // that create an isolated API user per test, where a shared session cannot be reused.

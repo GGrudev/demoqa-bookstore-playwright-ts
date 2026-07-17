@@ -24,8 +24,9 @@ on:
           - '2'
           - '4'
   schedule:
-    # Nightly full regression at 06:00 UTC
-    - cron: '0 6 * * *'
+    # Weekly full regression (Sunday 06:00 UTC). Kept off push/PR to limit
+    # traffic against the public DemoQA site; run manually any time via dispatch.
+    - cron: '0 6 * * 0'
 
 concurrency:
   group: regression-${{ github.workflow }}-${{ github.ref }}
@@ -43,10 +44,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.3.1
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v4.4.0
         with:
           node-version: 20
           cache: npm
@@ -118,10 +119,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.3.1
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v4.4.0
         with:
           node-version: 20
           cache: npm
@@ -137,7 +138,7 @@ jobs:
       - name: Cache Playwright browsers
         if: matrix.id != 'api'
         id: playwright-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v4.2.4
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
@@ -160,7 +161,7 @@ jobs:
 
       - name: Upload Playwright report (${{ matrix.artifact }})
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: playwright-report-${{ matrix.artifact }}
           path: playwright-report/
@@ -168,7 +169,7 @@ jobs:
 
       - name: Upload JUnit report (${{ matrix.artifact }})
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: junit-${{ matrix.artifact }}
           path: test-results/junit.xml
@@ -177,7 +178,7 @@ jobs:
 
       - name: Publish JUnit results (${{ matrix.artifact }})
         if: always()
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v1.9.1
         with:
           name: ${{ matrix.id }} Tests
           path: test-results/junit.xml
@@ -186,7 +187,7 @@ jobs:
 
       - name: Upload test results (${{ matrix.artifact }})
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: test-results-${{ matrix.artifact }}
           path: test-results/

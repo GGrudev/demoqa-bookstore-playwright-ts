@@ -3,6 +3,7 @@ import { TestDataBuilder } from '../../../config/test-data';
 import { loginViaUi } from '../../../utils/auth-flow';
 import { AddBooksResponseSchema } from '../../../schemas/book.schema';
 import { parseApiResponse } from '../../../utils/schema-validators';
+import { attachJson } from '../../../utils/test-diagnostics';
 
 test.describe(
     'Profile - Collection management',
@@ -17,6 +18,12 @@ test.describe(
             profilePage,
         }) => {
             const bookToAdd = TestDataBuilder.getKnownBooks()[0];
+            await attachJson('collection-context', {
+                userId: loggedInApiUser.userId,
+                userName: loggedInApiUser.userName,
+                isbn: bookToAdd.isbn,
+                title: bookToAdd.title,
+            });
 
             await test.step('Open book details while logged in', async () => {
                 await bookStorePage.goToBookStore();
@@ -43,6 +50,12 @@ test.describe(
             profilePage,
         }) => {
             const bookToDelete = TestDataBuilder.getKnownBooks()[0];
+            await attachJson('collection-context', {
+                userId: apiTestUser.userId,
+                userName: apiTestUser.userName,
+                isbn: bookToDelete.isbn,
+                title: bookToDelete.title,
+            });
 
             await test.step('Prepare user collection through API', async () => {
                 const response = await apiHelpers.addBooksToUser(
@@ -83,6 +96,11 @@ test.describe(
         }) => {
             test.setTimeout(60000);
             const booksToAdd = TestDataBuilder.getKnownBooks().slice(0, 2);
+            await attachJson('collection-context', {
+                userId: apiTestUser.userId,
+                userName: apiTestUser.userName,
+                isbns: booksToAdd.map((book) => book.isbn),
+            });
 
             await test.step('Prepare user collection through API', async () => {
                 const response = await apiHelpers.addBooksToUser(

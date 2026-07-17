@@ -40,6 +40,13 @@ export default class BookDetailsPage extends BasePage {
         await expect(this.authorValue).toHaveText(expectedBook.author);
         await expect(this.publisherValue).toHaveText(expectedBook.publisher);
         await expect(this.totalPagesValue).toHaveText(expectedBook.totalPages.toString());
+        await expect(this.descriptionValue).toContainText(expectedBook.description.slice(0, 40));
+        await expect(this.websiteValue).toHaveText(expectedBook.website);
+    }
+
+    async expectBookDetailsVisible(expectedBook: Pick<BookData, 'isbn' | 'title'>) {
+        await expect(this.isbnValue).toHaveText(expectedBook.isbn);
+        await expect(this.titleValue).toHaveText(expectedBook.title);
     }
 
     async getDisplayedIsbn(): Promise<string> {
