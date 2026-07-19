@@ -111,9 +111,13 @@ When adding locators, prefer (in order): `getByRole` / `getByLabel` → `getByTe
 
 Tests that mutate user state use the `apiTestUser` fixture. It creates a unique DemoQA user through the API before the test and deletes that user afterward. That avoids shared account state and keeps the suite safer for parallel execution.
 
-Static credentials can be supplied for login smoke tests:
+Static credentials are used for login smoke tests and the shared `storageState` setup user.
 
 ```bash
+# Recommended locally: copy and edit .env (loaded automatically by Playwright)
+cp .env.example .env
+
+# Or set shell variables instead of using .env
 # PowerShell
 $env:DEMOQA_USERNAME="yourUser"
 $env:DEMOQA_PASSWORD="YourPass@123"
@@ -123,7 +127,7 @@ export DEMOQA_USERNAME="yourUser"
 export DEMOQA_PASSWORD="YourPass@123"
 ```
 
-Copy `.env.example` to `.env` for local overrides. Default fallback credentials live in `config/environments.ts`.
+Locally, missing values fall back to the defaults in `config/environments.ts`. In CI, smoke/e2e/authenticated suites **require** `DEMOQA_USERNAME` and `DEMOQA_PASSWORD` repository secrets and fail fast if they are unset. API-only jobs do not need them.
 
 ## Authentication
 
@@ -240,14 +244,16 @@ npm run test:shard:1   # first half of the suite
 npm run test:shard:2   # second half
 ```
 
-### Optional CI secrets
+### Required CI secrets (UI suites)
 
-UI login tests use fallback credentials by default. For a dedicated account in manual CI smoke / regression runs, add repository secrets:
+For manual CI smoke and regression e2e/authenticated runs, add repository secrets:
 
 | Secret            | Description                                     |
 | ----------------- | ----------------------------------------------- |
 | `DEMOQA_USERNAME` | DemoQA username for UI smoke / regression tests |
 | `DEMOQA_PASSWORD` | DemoQA password for UI smoke / regression tests |
+
+Quality-only PR checks and API-only jobs do not need these secrets.
 
 ## Setup
 
@@ -256,6 +262,7 @@ git clone https://github.com/GGrudev/demoqa-bookstore-playwright-ts.git
 cd demoqa-bookstore-playwright-ts
 npm install
 npx playwright install
+cp .env.example .env   # optional local credential overrides
 ```
 
 ## Running Tests
@@ -297,6 +304,13 @@ npm run lint
 npm run format:check
 ```
 
+## Debugging Failures
+
+1. **HTML report** — `npm run test:report` (or download the `playwright-report-*` CI artifact).
+2. **Trace** — open a failed test’s `trace.zip` with `npx playwright show-trace <path>` (retained on failure locally; on first retry in CI).
+3. **Hybrid context** — collection tests attach `collection-context` JSON (`userId`, ISBN, title) via `utils/test-diagnostics.ts`.
+4. **JUnit / Checks** — CI publishes JUnit to the GitHub Checks tab and uploads `test-results-*` on failure.
+
 ## API Coverage
 
 **Account workflows**
@@ -327,6 +341,7 @@ The application is a public demo site, so occasional upstream slowness or data r
 
 - Add Docker support for a portable test execution environment
 - Expand axe coverage beyond the login page when targeting multi-page a11y gates
+- Path aliases for shorter imports across pages/fixtures/utils
 
 ## License
 

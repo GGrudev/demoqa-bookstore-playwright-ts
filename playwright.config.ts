@@ -1,6 +1,11 @@
+import { config as loadEnv } from 'dotenv';
 import { defineConfig, devices } from '@playwright/test';
 import { getEnvironment } from './config/environments';
 import { STATIC_USER_STORAGE_STATE } from './utils/auth-storage';
+
+// Load local `.env` before reading DEMOQA_* / ENV values. CI injects secrets via
+// the workflow environment, so an absent `.env` file is fine there.
+loadEnv({ quiet: true });
 
 const isCI = !!process.env.CI;
 const isHeadless = process.env.HEADLESS === 'true' || isCI;
