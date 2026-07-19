@@ -18,19 +18,20 @@ export interface EnvironmentConfig {
     };
 }
 
-export const environments: Record<string, EnvironmentConfig> = {
+type EnvironmentBase = {
+    baseUrl: string;
+    apiBaseUrl: string;
+    invalidUser: EnvironmentConfig['credentials']['invalidUser'];
+    timeout: EnvironmentConfig['timeout'];
+};
+
+const environmentBases: Record<string, EnvironmentBase> = {
     dev: {
         baseUrl: 'https://demoqa.com',
         apiBaseUrl: 'https://demoqa.com',
-        credentials: {
-            validUser: {
-                userName: process.env.DEMOQA_USERNAME || 'jdoe',
-                password: process.env.DEMOQA_PASSWORD || 'Test123!',
-            },
-            invalidUser: {
-                userName: 'nonExistentUser',
-                password: 'WrongPass123!',
-            },
+        invalidUser: {
+            userName: 'nonExistentUser',
+            password: 'WrongPass123!',
         },
         timeout: {
             default: 30000,
@@ -40,30 +41,72 @@ export const environments: Record<string, EnvironmentConfig> = {
     },
 };
 
-export function getEnvironment(): EnvironmentConfig {
+// Local fallbacks keep smoke/login tests runnable without setup. In CI, static-user
+// credentials must come from repository secrets so misconfigured workflows fail fast.
+function getStaticValidUser() {
+    const userName = process.env.DEMOQA_USERNAME;
+    const password = process.env.DEMOQA_PASSWORD;
+
+    if (process.env.CI) {
+        if (!userName || !password) {
+            throw new Error(
+                'CI requires DEMOQA_USERNAME and DEMOQA_PASSWORD repository secrets ' +
+                    'for suites that use the static DemoQA user (smoke/e2e/authenticated). ' +
+                    'API-only jobs do not need them.'
+            );
+        }
+
+        return { userName, password };
+    }
+
+    return {
+        userName: userName || 'jdoe',
+        password: password || 'Test123!',
+    };
+}
+
+function getEnvironmentBase(): EnvironmentBase {
     const env = process.env.ENV || 'dev';
-    const config = environments[env];
+    const config = environmentBases[env];
 
     if (!config) {
-        const availableEnvs = Object.keys(environments).join(', ');
+        const availableEnvs = Object.keys(environmentBases).join(', ');
         throw new Error(`Environment '${env}' not found. Available environments: ${availableEnvs}`);
     }
 
     return config;
 }
 
+export function getEnvironment(): EnvironmentConfig {
+    const config = getEnvironmentBase();
+
+    // Resolve static credentials lazily so API-only CI jobs can load Playwright
+    // config (baseURL/timeouts) without requiring UI login secrets.
+    return {
+        baseUrl: config.baseUrl,
+        apiBaseUrl: config.apiBaseUrl,
+        timeout: config.timeout,
+        get credentials() {
+            return {
+                validUser: getStaticValidUser(),
+                invalidUser: config.invalidUser,
+            };
+        },
+    };
+}
+
 export function getBaseUrl(): string {
-    return getEnvironment().baseUrl;
+    return getEnvironmentBase().baseUrl;
 }
 
 export function getApiBaseUrl(): string {
-    return getEnvironment().apiBaseUrl;
+    return getEnvironmentBase().apiBaseUrl;
 }
 
 export function getValidUserCredentials() {
-    return getEnvironment().credentials.validUser;
+    return getStaticValidUser();
 }
 
 export function getInvalidUserCredentials() {
-    return getEnvironment().credentials.invalidUser;
+    return getEnvironmentBase().invalidUser;
 }
