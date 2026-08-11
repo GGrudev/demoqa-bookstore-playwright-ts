@@ -1,6 +1,10 @@
 import { test, expect } from '../../../fixtures/page-fixtures';
 import { TestDataBuilder } from '../../../config/test-data';
-import { ApiErrorSchema } from '../../../schemas/account.schema';
+import {
+    ApiErrorSchema,
+    TokenResponseSchema,
+    UserResponseSchema,
+} from '../../../schemas/account.schema';
 import { parseApiResponse } from '../../../utils/schema-validators';
 
 test.describe(
@@ -22,9 +26,10 @@ test.describe(
                     );
 
                     expect(response.status).toBe(200);
-                    expect(response.body.status).toBe('Success');
-                    expect(response.body.result).toBe('User authorized successfully.');
-                    expect(response.body.token).toBeTruthy();
+                    const tokenResponse = parseApiResponse(TokenResponseSchema, response.body);
+                    expect(tokenResponse.status).toBe('Success');
+                    expect(tokenResponse.result).toBe('User authorized successfully.');
+                    expect(tokenResponse.token).toBeTruthy();
                 });
             }
         );
@@ -39,8 +44,10 @@ test.describe(
                 );
 
                 expect(response.status).toBe(200);
-                expect(response.body.status).toBe('Failed');
-                expect(response.body.result).toBe('User authorization failed.');
+                const tokenResponse = parseApiResponse(TokenResponseSchema, response.body);
+                expect(tokenResponse.status).toBe('Failed');
+                expect(tokenResponse.result).toBe('User authorization failed.');
+                expect(tokenResponse.token).toBeNull();
             });
         });
 
@@ -80,7 +87,7 @@ test.describe(
                 );
 
                 expect(userResponse.status).toBe(200);
-                const user = userResponse.body;
+                const user = parseApiResponse(UserResponseSchema, userResponse.body);
                 expect(user.userId).toBe(apiTestUser.userId);
                 expect(user.username).toBe(apiTestUser.userName);
                 expect(user.books).toEqual([]);

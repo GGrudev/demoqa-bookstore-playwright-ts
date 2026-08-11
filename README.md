@@ -13,10 +13,11 @@ End-to-end UI and API test automation for the [DemoQA Book Store](https://demoqa
 This project demonstrates senior QA automation practices on a public demo application:
 
 - **Layered architecture** — config, fixtures, page objects, API helpers, and tests stay separated by responsibility.
-- **Test pyramid** — fast API coverage plus targeted UI and hybrid flows.
+- **Test pyramid** — an offline base of contract and client tests, fast API coverage, then targeted UI and hybrid flows.
+- **Runs without the system under test** — recorded payloads and an in-process stub server let a real suite gate every pull request with zero DemoQA traffic.
 - **Isolated test data** — API-created users with automatic cleanup for parallel-safe runs.
 - **Hybrid setup** — API preconditions with UI verification for reliable end-to-end scenarios.
-- **CI-ready** — lint/typecheck/format on every PR; live DemoQA API/smoke suites stay in CI/CD via manual dispatch, plus weekly/manual full regression.
+- **CI-ready** — lint/typecheck/format plus the offline suite on every PR; live DemoQA API/smoke suites stay in CI/CD via manual dispatch, plus weekly/manual full regression.
 - **Selective component POM** — shared UI (`Header`, `BooksTable`, `ConfirmDialog`) composed into page objects where reuse pays off.
 
 ## Tech Stack
@@ -39,6 +40,7 @@ fixtures/            Custom Playwright fixtures and per-test API user lifecycle
 schemas/             Zod runtime contracts for DemoQA API request/response shapes
 pages/               Page Object classes (compose components + page workflows)
 tests/
+  offline/           Contract + API-client tests against recorded payloads and a stub server
   api/               API contract and workflow tests (`api` project)
   e2e/               UI and hybrid UI/API tests
 utils/               BasePage, API helpers, auth, diagnostics
@@ -49,8 +51,14 @@ utils/               BasePage, API helpers, auth, diagnostics
 ```mermaid
 flowchart TB
     subgraph tests [Tests]
+        OFF["Offline specs (@offline)"]
         API["API specs (@api)"]
         E2E["UI / hybrid specs (@e2e)"]
+    end
+
+    subgraph offline [Offline harness]
+        STUB[stub-server.ts]
+        REC[recorded/*.json]
     end
 
     subgraph fixtures [Fixtures]
@@ -70,6 +78,9 @@ flowchart TB
         ENV[environments.ts]
     end
 
+    OFF --> STUB
+    OFF --> REC
+    STUB --> AH
     API --> PF
     E2E --> PF
     PF --> PO
@@ -84,10 +95,11 @@ flowchart TB
 
 ### Layer responsibilities
 
-- `config/` — URLs, credentials, timeouts, and reusable test data builders.
-- `utils/api-helpers.ts` — typed client for DemoQA account and book endpoints; validates success responses with Zod.
-- `schemas/` — Zod schemas for book and account API contracts (`BookSchema`, `TokenResponseSchema`, etc.).
+- `config/` — URLs, credentials, timeouts, and reusable test data builders. Every wait used by a page object, component, or spec comes from `getTimeouts()`; millisecond literals are not inlined at call sites.
+- `utils/api-helpers.ts` — typed client for DemoQA account and book endpoints. Returns responses verbatim and validates outgoing payloads; response contracts are asserted by the specs.
+- `schemas/` — Zod schemas for book and account API contracts (`BookSchema`, `TokenResponseSchema`, etc.), plus loose setup envelopes used by fixtures.
 - `utils/schema-validators.ts` — shared `parseApiResponse` helper for runtime validation.
+- `tests/offline/` — stub server, recorded DemoQA payloads, and the specs that run without network access.
 - `utils/base-page.ts` — minimal shared base: navigation, the composed `Header`, and an assertion helper.
 - `components/` — selective component POM: `Header`, `BooksTable`, and `ConfirmDialog` for shared UI/behavior only.
 - `pages/` — page-specific workflows that compose those components.
@@ -101,11 +113,21 @@ When adding locators, prefer (in order): `getByRole` / `getByLabel` → `getByTe
 
 ## Test Strategy
 
-| Layer  | Purpose                     | Examples                                          |
-| ------ | --------------------------- | ------------------------------------------------- |
-| API    | Fast backend validation     | Token generation, book CRUD, Zod contract checks  |
-| UI     | User-facing flows           | Login, browse books, book details, profile        |
-| Hybrid | Reliable E2E with API setup | Add book via API, verify collection in profile UI |
+| Layer   | Purpose                     | Examples                                                        |
+| ------- | --------------------------- | --------------------------------------------------------------- |
+| Offline | Deterministic, no network   | Schema drift detection, `ApiHelpers` request/response behaviour |
+| API     | Fast backend validation     | Token generation, book CRUD, Zod contract checks                |
+| UI      | User-facing flows           | Login, browse books, book details, profile                      |
+| Hybrid  | Reliable E2E with API setup | Add book via API, verify collection in profile UI               |
+
+### Offline suite
+
+DemoQA is a shared public site: it can be slow, reset its data, or be down entirely. That makes it a poor gate for a pull request, but it is not a reason to ship a pipeline that only runs a linter. The `offline` project closes that gap and runs on every push and PR:
+
+- **Contract tests** (`tests/offline/contracts/`) parse payloads recorded from DemoQA against the Zod schemas. Alongside the happy paths, they assert that an added, removed, retyped, or malformed field is _rejected_ — so the schemas are proven to catch drift rather than assumed to.
+- **API client tests** (`tests/offline/api-client/`) run the real `ApiHelpers` against an in-process stub server (`tests/offline/stub-server.ts`) that records what the client sent. They cover bearer headers, URL and query construction, request payload mapping, error passthrough, and the `createUserAndGetToken` setup helper.
+
+The whole project runs in a few seconds, needs no browser, and needs no credentials.
 
 ## Test Data And Isolation
 
@@ -127,7 +149,7 @@ export DEMOQA_USERNAME="yourUser"
 export DEMOQA_PASSWORD="YourPass@123"
 ```
 
-Locally, missing values fall back to the defaults in `config/environments.ts`. In CI, smoke/e2e/authenticated suites **require** `DEMOQA_USERNAME` and `DEMOQA_PASSWORD` repository secrets and fail fast if they are unset. API-only jobs do not need them.
+Locally, missing values fall back to the defaults in `config/environments.ts`. In CI, smoke/e2e/authenticated suites **require** `DEMOQA_USERNAME` and `DEMOQA_PASSWORD` repository secrets and fail fast if they are unset. API-only and offline jobs do not need them.
 
 ## Authentication
 
@@ -161,27 +183,39 @@ await profilePage.goToProfile();
 
 ## API Contract Validation
 
-TypeScript interfaces in `api-helpers.ts` describe expected shapes at compile time only. **Zod schemas** in `schemas/` validate real API JSON at runtime.
+TypeScript types describe expected shapes at compile time only. **Zod schemas** in `schemas/` validate real API JSON at runtime, and if DemoQA returns an unexpected type or a missing field, tests fail with a clear error path (for example `books[0].pages`).
 
-Successful responses from `ApiHelpers` are parsed against schemas such as `BooksListSchema`, `BookSchema`, `TokenResponseSchema`, and `UserResponseSchema`. If DemoQA returns an unexpected type or missing field, tests fail with a clear Zod error path (for example `books[0].pages`).
-
-Error payloads can be validated explicitly in tests:
+Where that validation happens is a deliberate choice. `ApiHelpers` is used for test _setup_ as well as for assertions, so it returns every response body verbatim as `unknown` and never decides which contract applies:
 
 ```typescript
+// Specs parse the schema that fits their scenario.
+const books = parseApiResponse(BooksListSchema, response.body);
 const error = parseApiResponse(ApiErrorSchema, response.body);
 expect(error.code).toBe('1207');
 ```
 
+If the client parsed strict contracts internally, a single added field on DemoQA's side would fail every UI test that merely creates a user during setup — burying one real finding under a pile of unrelated red. Instead:
+
+| Concern                                   | Where it lives                                     | Strictness                                 |
+| ----------------------------------------- | -------------------------------------------------- | ------------------------------------------ |
+| Contract enforcement                      | API and offline specs                              | `z.strictObject` — rejects drift           |
+| Setup (fixtures, `createUserAndGetToken`) | `CreatedUserEnvelopeSchema`, `TokenEnvelopeSchema` | `z.looseObject` — only the fields consumed |
+| Outgoing request payloads                 | `ApiHelpers`                                       | Strict — a bad request is a test bug       |
+
+The offline suite asserts this split directly: the same drifted payload must fail the strict contract and pass the setup envelope.
+
 ## CI/CD Pipeline
 
-Two workflows keep **PR quality checks** separate from **live DemoQA traffic**, while still keeping API and smoke runs available in CI/CD.
+Two workflows keep **PR checks** separate from **live DemoQA traffic**, while still keeping API and smoke runs available in CI/CD.
 
 ### CI (`ci.yml`) — push, pull request, and manual dispatch
 
-| Trigger             | What runs                                                            |
-| ------------------- | -------------------------------------------------------------------- |
-| **Push / PR**       | Lint + typecheck + format only (no DemoQA traffic)                   |
-| **Manual dispatch** | Quality gate, then optional `api`, `smoke`, or `both` against DemoQA |
+| Trigger             | What runs                                                             |
+| ------------------- | --------------------------------------------------------------------- |
+| **Push / PR**       | Lint + typecheck + format, then the offline suite (no DemoQA traffic) |
+| **Manual dispatch** | The above, then optional `api`, `smoke`, or `both` against DemoQA     |
+
+The quality gate is enforcing: `npm run lint` runs with `--max-warnings=0` and the project's custom rules (`no-explicit-any`, `no-unused-vars`, `playwright/expect-expect`) are errors, so a warning fails the build rather than scrolling past.
 
 Trigger live suites from GitHub: **Actions → CI → Run workflow** and choose the suite.
 
@@ -276,6 +310,9 @@ npm run test:e2e
 
 # Run only API tests
 npm run test:api
+
+# Run the offline suite (no network, no browser, no credentials)
+npm run test:offline
 
 # Run smoke tests
 npm run test:smoke

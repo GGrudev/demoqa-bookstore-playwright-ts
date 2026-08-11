@@ -2,18 +2,13 @@ import { APIRequestContext } from '@playwright/test';
 import { getApiBaseUrl } from '../config/environments';
 import {
     AddBooksRequestSchema,
-    BooksListSchema,
-    BooksList,
     DeleteBookRequestSchema,
     ReplaceBookRequestSchema,
 } from '../schemas/book.schema';
 import {
     CredentialsRequestSchema,
-    CreateUserResponseSchema,
-    UserResponseSchema,
-    TokenResponseSchema,
-    UserResponse,
-    TokenResponse,
+    CreatedUserEnvelopeSchema,
+    TokenEnvelopeSchema,
 } from '../schemas/account.schema';
 import { parseApiResponse } from './schema-validators';
 
@@ -22,18 +17,29 @@ type ApiResult<T> = {
     body: T;
 };
 
+// Typed client for the DemoQA account and book endpoints.
+//
+// Responses are returned verbatim as `body: unknown`: this client is used for test
+// *setup* as well as assertions, so it must not decide which contract applies. Specs
+// parse the schema that fits their scenario (success or error) via `parseApiResponse`,
+// which keeps strict contract enforcement in the API specs where a failure is a real
+// finding — instead of failing every UI test that merely creates a user first.
+//
+// Outgoing payloads are still validated here, since a malformed request is a bug in
+// the test code and should fail before it reaches the network.
 export class ApiHelpers {
-    private baseUrl: string;
+    private readonly baseUrl: string;
 
-    constructor(private request: APIRequestContext) {
-        this.baseUrl = getApiBaseUrl();
+    // `baseUrl` is injectable so the offline suite can point this client at a local
+    // stub server without touching environment configuration.
+    constructor(
+        private readonly request: APIRequestContext,
+        baseUrl: string = getApiBaseUrl()
+    ) {
+        this.baseUrl = baseUrl;
     }
 
     // ── Account endpoints ──
-    //
-    // Endpoints exercised in both success and error scenarios return `body: unknown`
-    // so callers validate against the schema that fits their scenario. Endpoints only
-    // used for success are validated here and return a fully typed body.
 
     async createUser(userName: string, password: string): Promise<ApiResult<unknown>> {
         const data = CredentialsRequestSchema.parse({ userName, password });
@@ -44,16 +50,13 @@ export class ApiHelpers {
         return { status: response.status(), body: await response.json() };
     }
 
-    async generateToken(userName: string, password: string): Promise<ApiResult<TokenResponse>> {
+    async generateToken(userName: string, password: string): Promise<ApiResult<unknown>> {
         const data = CredentialsRequestSchema.parse({ userName, password });
         const response = await this.request.post(`${this.baseUrl}/Account/v1/GenerateToken`, {
             data,
         });
 
-        return {
-            status: response.status(),
-            body: parseApiResponse(TokenResponseSchema, await response.json()),
-        };
+        return { status: response.status(), body: await response.json() };
     }
 
     async isAuthorized(userName: string, password: string): Promise<ApiResult<unknown>> {
@@ -65,15 +68,12 @@ export class ApiHelpers {
         return { status: response.status(), body: await response.json() };
     }
 
-    async getUser(userId: string, token: string): Promise<ApiResult<UserResponse>> {
+    async getUser(userId: string, token: string): Promise<ApiResult<unknown>> {
         const response = await this.request.get(`${this.baseUrl}/Account/v1/User/${userId}`, {
             headers: { Authorization: `Bearer ${token}` },
         });
 
-        return {
-            status: response.status(),
-            body: parseApiResponse(UserResponseSchema, await response.json()),
-        };
+        return { status: response.status(), body: await response.json() };
     }
 
     async deleteUser(userId: string, token: string): Promise<{ status: number }> {
@@ -86,13 +86,10 @@ export class ApiHelpers {
 
     // ── BookStore endpoints ──
 
-    async getAllBooks(): Promise<ApiResult<BooksList>> {
+    async getAllBooks(): Promise<ApiResult<unknown>> {
         const response = await this.request.get(`${this.baseUrl}/BookStore/v1/Books`);
 
-        return {
-            status: response.status(),
-            body: parseApiResponse(BooksListSchema, await response.json()),
-        };
+        return { status: response.status(), body: await response.json() };
     }
 
     async getBookByIsbn(isbn: string): Promise<ApiResult<unknown>> {
@@ -159,21 +156,23 @@ export class ApiHelpers {
         return { status: response.status(), body: await response.json() };
     }
 
-    // ── Helper: create user and get token in one call ──
+    // ── Setup helper: create user and get token in one call ──
+    //
+    // Validates only the fields the fixtures consume, using the loose envelope schemas.
 
     async createUserAndGetToken(userName: string, password: string) {
         const userResponse = await this.createUser(userName, password);
-        const userBody = parseApiResponse(CreateUserResponseSchema, userResponse.body);
+        const user = parseApiResponse(CreatedUserEnvelopeSchema, userResponse.body);
         const tokenResponse = await this.generateToken(userName, password);
-        const token = tokenResponse.body.token;
+        const { token } = parseApiResponse(TokenEnvelopeSchema, tokenResponse.body);
 
         if (!token) {
             throw new Error(`Failed to generate token for '${userName}': token was null`);
         }
 
         return {
-            userId: userBody.userID,
-            userName: userBody.username,
+            userId: user.userID,
+            userName: user.username,
             token,
         };
     }

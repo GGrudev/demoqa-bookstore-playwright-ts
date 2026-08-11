@@ -2,6 +2,9 @@ import { Locator, Page, expect } from '@playwright/test';
 import { BasePage } from '../utils/base-page';
 import { BooksTable } from '../components/books-table';
 import { ConfirmDialog } from '../components/confirm-dialog';
+import { getTimeouts } from '../config/environments';
+
+const timeouts = getTimeouts();
 
 export default class ProfilePage extends BasePage {
     readonly books: BooksTable;
@@ -50,7 +53,9 @@ export default class ProfilePage extends BasePage {
 
     async verifyNoBooksInProfile() {
         await expect
-            .poll(async () => (await this.getBookTitlesInProfile()).length, { timeout: 15000 })
+            .poll(async () => (await this.getBookTitlesInProfile()).length, {
+                timeout: timeouts.uiSettle,
+            })
             .toBe(0);
     }
 

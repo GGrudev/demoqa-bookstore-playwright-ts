@@ -1,6 +1,6 @@
 name: CI
 
-# Push/PR: quality gate only (no DemoQA traffic).
+# Push/PR: quality gate plus the offline suite (no DemoQA traffic).
 # Manual dispatch: optionally run API and/or smoke against DemoQA.
 on:
   push:
@@ -55,6 +55,58 @@ jobs:
 
       - name: Check formatting
         run: npm run format:check
+
+  offline-tests:
+    name: Offline suite (contracts & API client)
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.3.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4.4.0
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Recorded payloads plus an in-process stub server: no browser, no DemoQA
+      # traffic, so this runs on every push and pull request.
+      - name: Run offline tests
+        run: npm run test:offline
+        env:
+          CI: true
+          PLAYWRIGHT_WORKERS: 4
+
+      - name: Upload offline Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: playwright-report-offline
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Publish offline JUnit results
+        if: always()
+        uses: dorny/test-reporter@v1.9.1
+        with:
+          name: Offline Tests
+          path: test-results/junit.xml
+          reporter: java-junit
+          fail-on-error: false
+
+      - name: Upload offline test results
+        if: failure()
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: test-results-offline
+          path: test-results/
+          retention-days: 14
 
   api-tests:
     name: API tests (parallel)

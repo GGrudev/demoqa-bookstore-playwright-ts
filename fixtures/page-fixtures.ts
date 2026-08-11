@@ -7,6 +7,8 @@ import ProfilePage from '../pages/profile-page';
 import { ApiHelpers } from '../utils/api-helpers';
 import { TestDataBuilder } from '../config/test-data';
 import { loginViaUi } from '../utils/auth-flow';
+import { TokenEnvelopeSchema } from '../schemas/account.schema';
+import { parseApiResponse } from '../utils/schema-validators';
 
 type ApiTestUser = {
     userId: string;
@@ -63,11 +65,12 @@ const testPages = baseTest.extend<Pages>({
                 apiTestUser.userName,
                 apiTestUser.password
             );
-            const cleanupToken = cleanupTokenResponse.body.token ?? '';
             baseExpect(
                 cleanupTokenResponse.status,
                 `Failed to generate cleanup token for API test user ${apiTestUser.userId}`
             ).toBe(200);
+            const cleanupToken =
+                parseApiResponse(TokenEnvelopeSchema, cleanupTokenResponse.body).token ?? '';
             baseExpect(
                 cleanupToken,
                 `Cleanup token was empty for API test user ${apiTestUser.userId}`

@@ -15,6 +15,10 @@ export interface EnvironmentConfig {
         default: number;
         navigation: number;
         action: number;
+        dialog: number;
+        uiSettle: number;
+        asyncList: number;
+        longTest: number;
     };
 }
 
@@ -37,6 +41,16 @@ const environmentBases: Record<string, EnvironmentBase> = {
             default: 30000,
             navigation: 60000,
             action: 10000,
+            // A Bootstrap modal or native alert appears after a React re-render.
+            dialog: 10000,
+            // DemoQA re-renders the collection after a mutation and filters the book
+            // table client-side, so polls and modal-close waits need more room.
+            uiSettle: 15000,
+            // The book list is fetched after navigation, so the first row lags first paint.
+            asyncList: 20000,
+            // Per-test override for flows that chain API setup, UI login, and several
+            // collection mutations inside one test.
+            longTest: 60000,
         },
     },
 };
@@ -109,4 +123,10 @@ export function getValidUserCredentials() {
 
 export function getInvalidUserCredentials() {
     return getEnvironmentBase().invalidUser;
+}
+
+// Single source for waits used by page objects, components, and specs. Locators
+// should reference these instead of inlining millisecond literals.
+export function getTimeouts(): EnvironmentConfig['timeout'] {
+    return getEnvironmentBase().timeout;
 }

@@ -4,6 +4,9 @@ import { loginViaUi } from '../../../utils/auth-flow';
 import { AddBooksResponseSchema } from '../../../schemas/book.schema';
 import { parseApiResponse } from '../../../utils/schema-validators';
 import { attachJson } from '../../../utils/test-diagnostics';
+import { getTimeouts } from '../../../config/environments';
+
+const timeouts = getTimeouts();
 
 test.describe(
     'Profile - Collection management',
@@ -94,7 +97,7 @@ test.describe(
             page,
             profilePage,
         }) => {
-            test.setTimeout(60000);
+            test.setTimeout(timeouts.longTest);
             const booksToAdd = TestDataBuilder.getKnownBooks().slice(0, 2);
             await attachJson('collection-context', {
                 userId: apiTestUser.userId,

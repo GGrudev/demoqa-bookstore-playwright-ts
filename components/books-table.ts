@@ -1,4 +1,7 @@
 import { Locator, Page, expect } from '@playwright/test';
+import { getTimeouts } from '../config/environments';
+
+const timeouts = getTimeouts();
 
 // Shared books table + search UI used on Book Store and Profile.
 // Extracted so row/title/search behavior lives in one place (composition over copy-paste).
@@ -17,8 +20,10 @@ export class BooksTable {
     // the first row to render prevents searches from running against an empty table
     // (a race that otherwise surfaces as intermittent "0 results" failures).
     async waitForLoaded() {
-        await expect(this.root).toBeVisible({ timeout: 20000 });
-        await expect(this.root.locator('tbody a').first()).toBeVisible({ timeout: 20000 });
+        await expect(this.root).toBeVisible({ timeout: timeouts.asyncList });
+        await expect(this.root.locator('tbody a').first()).toBeVisible({
+            timeout: timeouts.asyncList,
+        });
     }
 
     async expectVisible() {
