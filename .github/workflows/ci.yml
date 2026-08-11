@@ -85,7 +85,7 @@ jobs:
 
       - name: Upload offline Playwright report
         if: always()
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: playwright-report-offline
           path: playwright-report/
@@ -102,7 +102,7 @@ jobs:
 
       - name: Upload offline test results
         if: failure()
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: test-results-offline
           path: test-results/
@@ -138,7 +138,7 @@ jobs:
 
       - name: Upload API Playwright report
         if: always()
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: playwright-report-api
           path: playwright-report/
@@ -146,7 +146,7 @@ jobs:
 
       - name: Upload API JUnit report
         if: always()
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: junit-api
           path: test-results/junit.xml
@@ -164,7 +164,7 @@ jobs:
 
       - name: Upload API test results
         if: failure()
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: test-results-api
           path: test-results/
@@ -219,7 +219,7 @@ jobs:
 
       - name: Upload smoke Playwright report
         if: always()
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: playwright-report-smoke
           path: playwright-report/
@@ -227,7 +227,7 @@ jobs:
 
       - name: Upload smoke JUnit report
         if: always()
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: junit-smoke
           path: test-results/junit.xml
@@ -245,7 +245,7 @@ jobs:
 
       - name: Upload smoke test results
         if: failure()
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: test-results-smoke
           path: test-results/
