@@ -178,7 +178,7 @@ jobs:
 
       - name: Publish JUnit results (${{ matrix.artifact }})
         if: always()
-        uses: dorny/test-reporter@v1.9.1
+        uses: dorny/test-reporter@v3.0.0
         with:
           name: ${{ matrix.id }} Tests
           path: test-results/junit.xml

@@ -93,7 +93,7 @@ jobs:
 
       - name: Publish offline JUnit results
         if: always()
-        uses: dorny/test-reporter@v1.9.1
+        uses: dorny/test-reporter@v3.0.0
         with:
           name: Offline Tests
           path: test-results/junit.xml
@@ -155,7 +155,7 @@ jobs:
 
       - name: Publish API JUnit results
         if: always()
-        uses: dorny/test-reporter@v1.9.1
+        uses: dorny/test-reporter@v3.0.0
         with:
           name: API Tests
           path: test-results/junit.xml
@@ -236,7 +236,7 @@ jobs:
 
       - name: Publish smoke JUnit results
         if: always()
-        uses: dorny/test-reporter@v1.9.1
+        uses: dorny/test-reporter@v3.0.0
         with:
           name: Smoke Tests
           path: test-results/junit.xml
