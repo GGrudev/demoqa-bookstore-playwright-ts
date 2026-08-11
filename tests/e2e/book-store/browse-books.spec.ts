@@ -1,5 +1,8 @@
 import { test, expect } from '../../../fixtures/page-fixtures';
 import { TestDataBuilder } from '../../../config/test-data';
+import { getTimeouts } from '../../../config/environments';
+
+const timeouts = getTimeouts();
 
 test.describe(
     'Book Store - Browse and search books',
@@ -41,7 +44,7 @@ test.describe(
                 // Poll rather than snapshot: the DemoQA table filters client-side,
                 // so the row list may not be settled the instant the fill resolves.
                 await expect
-                    .poll(() => bookStorePage.getBookTitles(), { timeout: 15000 })
+                    .poll(() => bookStorePage.getBookTitles(), { timeout: timeouts.uiSettle })
                     .toContain(searchQuery);
             });
         });
@@ -65,7 +68,7 @@ test.describe(
                                 )
                             );
                         },
-                        { timeout: 15000 }
+                        { timeout: timeouts.uiSettle }
                     )
                     .toBe(true);
             });
@@ -77,7 +80,7 @@ test.describe(
             await test.step('Search and then clear', async () => {
                 await bookStorePage.searchForBook('Git');
                 await expect
-                    .poll(() => bookStorePage.getBookCount(), { timeout: 15000 })
+                    .poll(() => bookStorePage.getBookCount(), { timeout: timeouts.uiSettle })
                     .toBeGreaterThan(0);
 
                 await bookStorePage.clearSearch();
@@ -85,7 +88,7 @@ test.describe(
 
             await test.step('Verify all books are displayed again', async () => {
                 await expect
-                    .poll(() => bookStorePage.getBookCount(), { timeout: 15000 })
+                    .poll(() => bookStorePage.getBookCount(), { timeout: timeouts.uiSettle })
                     .toBe(initialBookCount);
             });
         });

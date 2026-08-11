@@ -20,6 +20,7 @@ const desktopChrome = {
 // the dedicated `authenticated` project (which depends on the `setup` project).
 const AUTHENTICATED_SPECS = /.*\.authenticated\.spec\.ts/;
 const API_SPECS = /.*\/api\/.*\.spec\.ts/;
+const OFFLINE_SPECS = /.*\/offline\/.*\.spec\.ts/;
 
 const ciWorkers = process.env.PLAYWRIGHT_WORKERS
     ? Number.parseInt(process.env.PLAYWRIGHT_WORKERS, 10)
@@ -67,6 +68,13 @@ export default defineConfig({
             use: desktopChrome,
         },
         {
+            // Schema contracts and ApiHelpers behaviour against recorded payloads and a
+            // local stub server. No browser and no DemoQA traffic, so this project gates
+            // every push and pull request (`npm run test:offline`).
+            name: 'offline',
+            testMatch: OFFLINE_SPECS,
+        },
+        {
             // Request-context API tests — no browser dependency in CI when this
             // project is selected alone (`npm run test:api`).
             name: 'api',
@@ -75,8 +83,8 @@ export default defineConfig({
         {
             name: 'chromium',
             use: desktopChrome,
-            // Authenticated specs and API specs have dedicated projects.
-            testIgnore: [AUTHENTICATED_SPECS, API_SPECS],
+            // Authenticated, API, and offline specs have dedicated projects.
+            testIgnore: [AUTHENTICATED_SPECS, API_SPECS, OFFLINE_SPECS],
         },
         {
             name: 'authenticated',
