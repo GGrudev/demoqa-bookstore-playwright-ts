@@ -266,14 +266,23 @@ test.describe(
             });
         });
 
-        test('API response times are within acceptable limits', async ({ apiHelpers }) => {
+        test('Books endpoint responds and its latency is recorded', async ({
+            apiHelpers,
+        }, testInfo) => {
             await test.step('Measure GET /BookStore/v1/Books response time', async () => {
                 const start = Date.now();
                 const response = await apiHelpers.getAllBooks();
-                const duration = Date.now() - start;
+                const durationMs = Date.now() - start;
 
                 expect(response.status).toBe(200);
-                expect(duration).toBeLessThan(5000);
+
+                // Recorded rather than asserted. DemoQA is shared public infrastructure,
+                // so a latency threshold here would gate the suite on the internet and
+                // the demo host instead of on the application.
+                testInfo.annotations.push({
+                    type: 'latency',
+                    description: `GET /BookStore/v1/Books took ${durationMs}ms`,
+                });
             });
         });
 

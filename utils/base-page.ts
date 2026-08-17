@@ -24,7 +24,11 @@ export class BasePage {
         await this.page.goto('/profile');
     }
 
+    // Soft assertions are used here so a broken page reports every missing field at
+    // once instead of only the first. They also never reject, which means the parallel
+    // check cannot leave the losers of a `Promise.all` race as unhandled rejections.
+    // Playwright still fails the test once the soft failures are collected.
     async expectFieldsVisible(...fields: Locator[]) {
-        await Promise.all(fields.map((field) => expect(field).toBeVisible()));
+        await Promise.all(fields.map((field) => expect.soft(field).toBeVisible()));
     }
 }
