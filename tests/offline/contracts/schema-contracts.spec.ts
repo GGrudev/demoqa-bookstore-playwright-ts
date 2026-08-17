@@ -6,9 +6,9 @@ import {
     TokenEnvelopeSchema,
     TokenResponseSchema,
     UserResponseSchema,
-} from '../../../schemas/account.schema';
-import { BookSchema, BooksListSchema } from '../../../schemas/book.schema';
-import { parseApiResponse } from '../../../utils/schema-validators';
+} from '@schemas/account.schema';
+import { BookSchema, BooksListSchema } from '@schemas/book.schema';
+import { parseApiResponse } from '@utils/schema-validators';
 import booksList from '../recorded/books-list.json';
 import createdUser from '../recorded/created-user.json';
 import errorIsbnNotAvailable from '../recorded/error-isbn-not-available.json';

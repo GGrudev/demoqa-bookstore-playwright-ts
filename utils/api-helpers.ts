@@ -1,15 +1,15 @@
 import { APIRequestContext } from '@playwright/test';
-import { getApiBaseUrl } from '../config/environments';
+import { getApiBaseUrl } from '@config/environments';
 import {
     AddBooksRequestSchema,
     DeleteBookRequestSchema,
     ReplaceBookRequestSchema,
-} from '../schemas/book.schema';
+} from '@schemas/book.schema';
 import {
     CredentialsRequestSchema,
     CreatedUserEnvelopeSchema,
     TokenEnvelopeSchema,
-} from '../schemas/account.schema';
+} from '@schemas/account.schema';
 import { parseApiResponse } from './schema-validators';
 
 type ApiResult<T> = {

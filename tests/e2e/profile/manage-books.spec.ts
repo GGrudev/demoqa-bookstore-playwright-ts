@@ -1,9 +1,9 @@
-import { test, expect } from '../../../fixtures/page-fixtures';
-import { TestDataBuilder } from '../../../config/test-data';
-import { loginViaUi } from '../../../utils/auth-flow';
-import { AddBooksResponseSchema } from '../../../schemas/book.schema';
-import { parseApiResponse } from '../../../utils/schema-validators';
-import { attachJson } from '../../../utils/test-diagnostics';
+import { test, expect } from '@fixtures/page-fixtures';
+import { TestDataBuilder } from '@config/test-data';
+import { loginViaUi } from '@utils/auth-flow';
+import { AddBooksResponseSchema } from '@schemas/book.schema';
+import { parseApiResponse } from '@utils/schema-validators';
+import { attachJson } from '@utils/test-diagnostics';
 
 test.describe(
     'Profile - Manage book collection',

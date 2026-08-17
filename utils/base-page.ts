@@ -1,5 +1,5 @@
 import { Locator, Page, expect } from '@playwright/test';
-import { Header } from '../components/header';
+import { Header } from '@components/header';
 
 // Minimal shared base for page objects: shared navigation, a composed Header
 // component for session state, and a small assertion helper. Interactions use

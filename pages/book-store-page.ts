@@ -1,6 +1,6 @@
 import { Page, expect } from '@playwright/test';
-import { BasePage } from '../utils/base-page';
-import { BooksTable } from '../components/books-table';
+import { BasePage } from '@utils/base-page';
+import { BooksTable } from '@components/books-table';
 
 export default class BookStorePage extends BasePage {
     readonly books: BooksTable;

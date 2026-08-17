@@ -1,5 +1,5 @@
 import { Locator, Page, expect } from '@playwright/test';
-import { getTimeouts } from '../config/environments';
+import { getTimeouts } from '@config/environments';
 
 const timeouts = getTimeouts();
 
