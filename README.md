@@ -133,6 +133,8 @@ The whole project runs in a few seconds, needs no browser, and needs no credenti
 
 Tests that mutate user state use the `apiTestUser` fixture. It creates a unique DemoQA user through the API before the test and deletes that user afterward. That avoids shared account state and keeps the suite safer for parallel execution.
 
+Cleanup is treated as housekeeping, not as a result. Teardown talks to a public demo site, so a failure there says nothing about the test that just ran and does not fail it. Instead the fixture annotates the test with `cleanup-failed` and records the account in `.test-users/leaked-users.jsonl`, and `utils/global-teardown.ts` retries the deletion once the run finishes. Anything still undeletable stays in that file and is reported on the console, so leaked accounts are visible rather than silent.
+
 Static credentials are used for login smoke tests and the shared `storageState` setup user.
 
 ```bash
@@ -346,7 +348,8 @@ npm run format:check
 1. **HTML report** — `npm run test:report` (or download the `playwright-report-*` CI artifact).
 2. **Trace** — open a failed test’s `trace.zip` with `npx playwright show-trace <path>` (retained on failure locally; on first retry in CI).
 3. **Hybrid context** — collection tests attach `collection-context` JSON (`userId`, ISBN, title) via `utils/test-diagnostics.ts`.
-4. **JUnit / Checks** — CI publishes JUnit to the GitHub Checks tab and uploads `test-results-*` on failure.
+4. **Annotations** — `cleanup-failed` marks a test whose isolated user could not be deleted; `latency` records measured API response times without gating on them.
+5. **JUnit / Checks** — CI publishes JUnit to the GitHub Checks tab and uploads `test-results-*` on failure.
 
 ## API Coverage
 

@@ -7,6 +7,7 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 .auth/
+.test-users/
 
 # IDE
 .vscode/

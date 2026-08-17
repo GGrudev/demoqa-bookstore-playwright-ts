@@ -38,17 +38,13 @@ export class BooksTable {
         await this.searchBox.clear();
     }
 
+    // One round trip rather than two per row: this runs on every iteration of the
+    // `expect.poll` loops that wait for the client-side filter to settle, so a
+    // per-row visibility check makes the polls markedly slower on a full table.
     async getTitles(): Promise<string[]> {
-        const titles: string[] = [];
-        const titleLinks = this.root.locator('tbody a');
+        const titles = await this.root.locator('tbody a:visible').allInnerTexts();
 
-        for (const link of await titleLinks.all()) {
-            if (await link.isVisible()) {
-                titles.push((await link.innerText()).trim());
-            }
-        }
-
-        return titles;
+        return titles.map((title) => title.trim());
     }
 
     async getCount(): Promise<number> {

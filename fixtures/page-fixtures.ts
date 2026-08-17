@@ -1,4 +1,4 @@
-import { expect as baseExpect, test as baseTest } from '@playwright/test';
+import { test as baseTest } from '@playwright/test';
 import LoginPage from '../pages/login-page';
 import RegisterPage from '../pages/register-page';
 import BookStorePage from '../pages/book-store-page';
@@ -7,8 +7,8 @@ import ProfilePage from '../pages/profile-page';
 import { ApiHelpers } from '../utils/api-helpers';
 import { TestDataBuilder } from '../config/test-data';
 import { loginViaUi } from '../utils/auth-flow';
-import { TokenEnvelopeSchema } from '../schemas/account.schema';
-import { parseApiResponse } from '../utils/schema-validators';
+import { deleteTestUser } from '../utils/test-user-cleanup';
+import { recordLeakedUser } from '../utils/test-user-registry';
 
 type ApiTestUser = {
     userId: string;
@@ -47,7 +47,7 @@ const testPages = baseTest.extend<Pages>({
     apiHelpers: async ({ request }, use) => {
         await use(new ApiHelpers(request));
     },
-    apiTestUser: async ({ apiHelpers }, use) => {
+    apiTestUser: async ({ apiHelpers }, use, testInfo) => {
         const user = TestDataBuilder.createRandomUser();
         const createdUser = await apiHelpers.createUserAndGetToken(user.userName, user.password);
         const apiTestUser = {
@@ -58,29 +58,25 @@ const testPages = baseTest.extend<Pages>({
         try {
             await use(apiTestUser);
         } finally {
-            // Generating a token invalidates the user's previous token in DemoQA.
-            // Refresh it during teardown so tests that exercise token rotation
-            // cannot leave their isolated account behind.
-            const cleanupTokenResponse = await apiHelpers.generateToken(
-                apiTestUser.userName,
-                apiTestUser.password
-            );
-            baseExpect(
-                cleanupTokenResponse.status,
-                `Failed to generate cleanup token for API test user ${apiTestUser.userId}`
-            ).toBe(200);
-            const cleanupToken =
-                parseApiResponse(TokenEnvelopeSchema, cleanupTokenResponse.body).token ?? '';
-            baseExpect(
-                cleanupToken,
-                `Cleanup token was empty for API test user ${apiTestUser.userId}`
-            ).not.toBe('');
+            const cleanup = await deleteTestUser(apiHelpers, apiTestUser);
 
-            const cleanupResponse = await apiHelpers.deleteUser(apiTestUser.userId, cleanupToken);
-            baseExpect(
-                cleanupResponse.status,
-                `Failed to delete API test user ${apiTestUser.userId}`
-            ).toBe(204);
+            if (!cleanup.ok) {
+                // Teardown talks to a public demo site, so a failure here says nothing
+                // about the test that just ran and must not turn it red. Surface it on
+                // the report and hand the account to globalTeardown, which retries the
+                // deletion once the run is over.
+                testInfo.annotations.push({
+                    type: 'cleanup-failed',
+                    description: `${apiTestUser.userName} (${apiTestUser.userId}): ${cleanup.reason}`,
+                });
+
+                await recordLeakedUser({
+                    userId: apiTestUser.userId,
+                    userName: apiTestUser.userName,
+                    password: apiTestUser.password,
+                    reason: cleanup.reason,
+                });
+            }
         }
     },
     loggedInApiUser: async ({ page, apiTestUser }, use) => {

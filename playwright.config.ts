@@ -28,6 +28,9 @@ const ciWorkers = process.env.PLAYWRIGHT_WORKERS
 
 export default defineConfig({
     testDir: './tests',
+    // Retries deletion of any isolated user whose per-test cleanup failed, so a
+    // teardown hiccup cannot strand accounts on DemoQA. No-op when nothing leaked.
+    globalTeardown: './utils/global-teardown.ts',
     fullyParallel: true,
     forbidOnly: isCI,
     retries: isCI ? 2 : 0,
