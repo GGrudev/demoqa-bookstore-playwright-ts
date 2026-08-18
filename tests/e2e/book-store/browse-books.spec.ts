@@ -1,6 +1,6 @@
-import { test, expect } from '../../../fixtures/page-fixtures';
-import { TestDataBuilder } from '../../../config/test-data';
-import { getTimeouts } from '../../../config/environments';
+import { test, expect } from '@fixtures/page-fixtures';
+import { TestDataBuilder } from '@config/test-data';
+import { getTimeouts } from '@config/environments';
 
 const timeouts = getTimeouts();
 

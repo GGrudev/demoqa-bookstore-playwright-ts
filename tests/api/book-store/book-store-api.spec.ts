@@ -1,8 +1,8 @@
-import { test, expect } from '../../../fixtures/page-fixtures';
-import { TestDataBuilder } from '../../../config/test-data';
-import { AddBooksResponseSchema, BookSchema, BooksListSchema } from '../../../schemas/book.schema';
-import { ApiErrorSchema, UserResponseSchema } from '../../../schemas/account.schema';
-import { parseApiResponse } from '../../../utils/schema-validators';
+import { test, expect } from '@fixtures/page-fixtures';
+import { TestDataBuilder } from '@config/test-data';
+import { AddBooksResponseSchema, BookSchema, BooksListSchema } from '@schemas/book.schema';
+import { ApiErrorSchema, UserResponseSchema } from '@schemas/account.schema';
+import { parseApiResponse } from '@utils/schema-validators';
 
 test.describe(
     'BookStore API',

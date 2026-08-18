@@ -1,5 +1,5 @@
-import { test, expect } from '../../../fixtures/page-fixtures';
-import { TestDataBuilder } from '../../../config/test-data';
+import { test, expect } from '@fixtures/page-fixtures';
+import { TestDataBuilder } from '@config/test-data';
 
 test.describe(
     'Login functionality',

@@ -2,6 +2,7 @@ import { config as loadEnv } from 'dotenv';
 import { defineConfig, devices } from '@playwright/test';
 import { getEnvironment } from './config/environments';
 import { STATIC_USER_STORAGE_STATE } from './utils/auth-storage';
+import type { TestOptions } from './fixtures/page-fixtures';
 
 // Load local `.env` before reading DEMOQA_* / ENV values. CI injects secrets via
 // the workflow environment, so an absent `.env` file is fine there.
@@ -11,10 +12,10 @@ const isCI = !!process.env.CI;
 const isHeadless = process.env.HEADLESS === 'true' || isCI;
 const env = getEnvironment();
 
-const desktopChrome = {
-    ...devices['Desktop Chrome'],
-    viewport: { width: 1920, height: 1080 },
-};
+const desktopViewport = { width: 1920, height: 1080 };
+const desktopChrome = { ...devices['Desktop Chrome'], viewport: desktopViewport };
+const desktopFirefox = { ...devices['Desktop Firefox'], viewport: desktopViewport };
+const desktopSafari = { ...devices['Desktop Safari'], viewport: desktopViewport };
 
 // Specs matching this pattern reuse the shared authenticated session and run in
 // the dedicated `authenticated` project (which depends on the `setup` project).
@@ -26,7 +27,7 @@ const ciWorkers = process.env.PLAYWRIGHT_WORKERS
     ? Number.parseInt(process.env.PLAYWRIGHT_WORKERS, 10)
     : 2;
 
-export default defineConfig({
+export default defineConfig<TestOptions>({
     testDir: './tests',
     // Retries deletion of any isolated user whose per-test cleanup failed, so a
     // teardown hiccup cannot strand accounts on DemoQA. No-op when nothing leaked.
@@ -46,6 +47,9 @@ export default defineConfig({
             },
         ],
         ['junit', { outputFile: 'test-results/junit.xml' }],
+        // Annotates failures inline on the PR diff, so a reviewer sees them without
+        // opening the job log or downloading the HTML report artifact.
+        ...(isCI ? [['github'] as const] : []),
     ],
 
     timeout: env.timeout.default,
@@ -56,6 +60,9 @@ export default defineConfig({
 
     use: {
         baseURL: env.baseUrl,
+        // Consumed by the `apiHelpers` fixture. Kept beside `baseURL` so both hosts are
+        // declared in one place and either can be overridden per project.
+        apiBaseUrl: env.apiBaseUrl,
         headless: isHeadless,
         trace: isCI ? 'on-first-retry' : 'retain-on-failure',
         screenshot: 'only-on-failure',
@@ -97,6 +104,18 @@ export default defineConfig({
                 ...desktopChrome,
                 storageState: STATIC_USER_STORAGE_STATE,
             },
+        },
+        // Chromium gates every run; these two are opt-in via `npm run test:cross-browser`
+        // or the regression workflow. See "Cross-browser strategy" in the README.
+        {
+            name: 'firefox',
+            use: desktopFirefox,
+            testIgnore: [AUTHENTICATED_SPECS, API_SPECS, OFFLINE_SPECS],
+        },
+        {
+            name: 'webkit',
+            use: desktopSafari,
+            testIgnore: [AUTHENTICATED_SPECS, API_SPECS, OFFLINE_SPECS],
         },
     ],
 });

@@ -101,15 +101,19 @@ flowchart TB
 - `utils/schema-validators.ts` — shared `parseApiResponse` helper for runtime validation.
 - `tests/offline/` — stub server, recorded DemoQA payloads, and the specs that run without network access.
 - `utils/base-page.ts` — minimal shared base: navigation, the composed `Header`, and an assertion helper.
-- `components/` — selective component POM: `Header`, `BooksTable`, and `ConfirmDialog` for shared UI/behavior only.
+- `components/` — selective component POM: `Header`, `BooksTable`, and `ConfirmDialog` for shared UI/behavior only. `BooksTable` takes the wrapper it lives under, because Book Store and Profile render the same table in different containers.
 - `pages/` — page-specific workflows that compose those components.
-- `fixtures/page-fixtures.ts` — injects page objects, API helpers, and isolated users into tests.
+- `fixtures/page-fixtures.ts` — injects page objects, API helpers, and isolated users into tests. It also declares `apiBaseUrl` as a Playwright option, so the API host is configured in `playwright.config.ts` beside `baseURL` and can be overridden per project instead of each client reading environment config itself.
 - `utils/test-diagnostics.ts` — attaches user/ISBN context to the report for hybrid failures.
 - `tests/` — scenarios using `test.step` and tags such as `@api`, `@e2e`, `@smoke`, `@a11y`.
 
 ### Selector priority
 
 When adding locators, prefer (in order): `getByRole` / `getByLabel` → `getByText` → stable `#id` → CSS.
+
+### Import paths
+
+Cross-directory imports use TypeScript path aliases (`@components/*`, `@config/*`, `@fixtures/*`, `@pages/*`, `@schemas/*`, `@utils/*`), declared once in `tsconfig.json` and resolved by both `tsc` and Playwright. Moving a spec between folders no longer changes its imports, and `../../../` chains are gone. Same-directory imports stay relative, since an alias there would only add noise.
 
 ## Test Strategy
 
@@ -128,6 +132,16 @@ DemoQA is a shared public site: it can be slow, reset its data, or be down entir
 - **API client tests** (`tests/offline/api-client/`) run the real `ApiHelpers` against an in-process stub server (`tests/offline/stub-server.ts`) that records what the client sent. They cover bearer headers, URL and query construction, request payload mapping, error passthrough, and the `createUserAndGetToken` setup helper.
 
 The whole project runs in a few seconds, needs no browser, and needs no credentials.
+
+### Cross-browser strategy
+
+Chromium is the gate: it runs in CI and on every local `npm test`. Firefox and WebKit are wired as projects but stay opt-in, via `npm run test:cross-browser` or the regression workflow's `cross-browser` / `all` suite options.
+
+That is a deliberate split rather than a gap. The system under test is a third-party demo site, so rendering differences between engines are not a defect this suite can act on, and running three engines against a shared public site on every push triples the traffic for very little signal. Keeping the projects configured means the matrix is one command away when it is needed — before a release, or when chasing an engine-specific bug — without paying for it on every run. The regression workflow installs only the engines a given job actually uses, so the API job downloads no browser at all and the cross-browser job skips Chromium.
+
+### Accessibility
+
+`tests/e2e/login/login-a11y.spec.ts` runs axe against WCAG 2.0/2.1 A and AA rules. DemoQA embeds Google Ads iframes whose creatives ship unlabelled images, and the upstream ToolsQA banner has no `alt` text — none of it ours to fix, and the ad slots differ between page loads. The scan excludes those two regions by selector rather than disabling the `image-alt` rule, so the rule stays active on the application's own markup. Suppressing a rule to get a green run only removes the check; scoping the scan keeps it.
 
 ## Test Data And Isolation
 
@@ -217,7 +231,7 @@ Two workflows keep **PR checks** separate from **live DemoQA traffic**, while st
 | **Push / PR**       | Lint + typecheck + format, then the offline suite (no DemoQA traffic) |
 | **Manual dispatch** | The above, then optional `api`, `smoke`, or `both` against DemoQA     |
 
-The quality gate is enforcing: `npm run lint` runs with `--max-warnings=0` and the project's custom rules (`no-explicit-any`, `no-unused-vars`, `playwright/expect-expect`) are errors, so a warning fails the build rather than scrolling past.
+The quality gate is enforcing: `npm run lint` runs ESLint 9 flat config (`eslint.config.mjs`) with `--max-warnings=0`, and the project's custom rules (`no-explicit-any`, `no-unused-vars`, `playwright/expect-expect`) are errors, so a warning fails the build rather than scrolling past.
 
 Trigger live suites from GitHub: **Actions → CI → Run workflow** and choose the suite.
 
@@ -232,18 +246,20 @@ Trigger live suites from GitHub: **Actions → CI → Run workflow** and choose 
 
 Trigger from GitHub: **Actions → Regression → Run workflow**
 
-| Suite option         | What runs                                   |
-| -------------------- | ------------------------------------------- |
-| `smoke`              | Critical `@smoke` tests only                |
-| `api`                | All `@api` tests                            |
-| `e2e`                | Chromium UI/hybrid projects                 |
-| `regression` / `all` | API + E2E jobs **in parallel** (full suite) |
+| Suite option    | What runs                                      |
+| --------------- | ---------------------------------------------- |
+| `smoke`         | Critical `@smoke` tests only                   |
+| `api`           | All `@api` tests                               |
+| `e2e`           | Chromium UI/hybrid projects                    |
+| `cross-browser` | The same UI specs on Firefox and WebKit        |
+| `regression`    | API + E2E jobs **in parallel**                 |
+| `all`           | API + E2E + cross-browser jobs **in parallel** |
 
 - **Schedule:** full regression weekly (Sunday 06:00 UTC)
 - **Workers:** choose 1, 2, or 4 parallel Playwright workers per job (default: 2)
-- API-only matrix jobs skip Chromium install
+- Each matrix job installs only the browsers it runs; the API job installs none
 
-Failed live-test runs upload Playwright HTML reports, JUnit XML, and failure artifacts. JUnit results are published to the GitHub Checks tab.
+Failed live-test runs upload Playwright HTML reports, JUnit XML, and failure artifacts. JUnit results are published to the GitHub Checks tab, and in CI the `github` reporter annotates failures inline on the pull request diff so a reviewer sees the failing assertion without opening a log or downloading an artifact.
 
 ### Parallel execution
 
@@ -293,18 +309,20 @@ Quality-only PR checks and API-only jobs do not need these secrets.
 
 ## Setup
 
+Requires Node.js 20.19 or newer (CI runs Node 22).
+
 ```bash
 git clone https://github.com/GGrudev/demoqa-bookstore-playwright-ts.git
 cd demoqa-bookstore-playwright-ts
 npm install
-npx playwright install
-cp .env.example .env   # optional local credential overrides
+npx playwright install          # or `npx playwright install chromium` for the default gate
+cp .env.example .env            # optional local credential overrides
 ```
 
 ## Running Tests
 
 ```bash
-# Run all tests
+# Standard gate: offline + API + Chromium UI + authenticated
 npm test
 
 # Run only E2E/UI and hybrid tests
@@ -319,7 +337,10 @@ npm run test:offline
 # Run smoke tests
 npm run test:smoke
 
-# Run full regression suite (all tests)
+# Run the UI specs on Firefox and WebKit
+npm run test:cross-browser
+
+# Run everything, including cross-browser
 npm run test:regression
 
 # Run half the suite (sharding demo)
@@ -375,13 +396,15 @@ npm run format:check
 
 DemoQA protects UI registration with reCAPTCHA, so the project does not automate the full UI registration submit flow. The `RegisterPage` object and login-to-register navigation test validate navigation and form visibility only. User creation for test setup is handled through the API.
 
+"Delete All Books" clears the collection server-side but does not re-render the profile table, so the deleted rows stay on screen until the page is loaded again. `ProfilePage.deleteAllBooks()` reloads before asserting. Deleting a single book does re-render, so only the bulk action needs this.
+
 The application is a public demo site, so occasional upstream slowness or data resets are possible. API-created users and automatic cleanup reduce the impact of shared environment state.
 
 ## Planned Improvements
 
 - Add Docker support for a portable test execution environment
 - Expand axe coverage beyond the login page when targeting multi-page a11y gates
-- Path aliases for shorter imports across pages/fixtures/utils
+- Publish the HTML report to GitHub Pages, and switch CI to the `blob` reporter with `merge-reports` once the suite is large enough to shard across runners
 
 ## License
 

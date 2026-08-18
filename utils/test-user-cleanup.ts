@@ -1,5 +1,5 @@
 import { ApiHelpers } from './api-helpers';
-import { TokenEnvelopeSchema } from '../schemas/account.schema';
+import { TokenEnvelopeSchema } from '@schemas/account.schema';
 import { parseApiResponse } from './schema-validators';
 
 export type DeletableUser = {

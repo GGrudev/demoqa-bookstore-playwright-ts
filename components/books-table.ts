@@ -1,5 +1,5 @@
 import { Locator, Page, expect } from '@playwright/test';
-import { getTimeouts } from '../config/environments';
+import { getTimeouts } from '@config/environments';
 
 const timeouts = getTimeouts();
 
@@ -10,8 +10,15 @@ export class BooksTable {
     readonly searchBox: Locator;
     readonly rows: Locator;
 
-    constructor(private readonly page: Page) {
-        this.root = page.locator('div.books-wrapper table');
+    // Book Store and Profile render the same table under different wrappers
+    // (`books-wrapper` vs `profile-wrapper`), so the owning page object supplies its
+    // own. Defaulting to a wrapper that does not exist on the page silently yields an
+    // empty table, which makes "no books" assertions pass without checking anything.
+    constructor(
+        private readonly page: Page,
+        rootSelector: string = 'div.books-wrapper table'
+    ) {
+        this.root = page.locator(rootSelector);
         this.searchBox = page.locator('#searchBox');
         this.rows = this.root.locator('tbody > tr');
     }

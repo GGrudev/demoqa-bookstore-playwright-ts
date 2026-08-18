@@ -1,20 +1,28 @@
 import { test as baseTest } from '@playwright/test';
-import LoginPage from '../pages/login-page';
-import RegisterPage from '../pages/register-page';
-import BookStorePage from '../pages/book-store-page';
-import BookDetailsPage from '../pages/book-details-page';
-import ProfilePage from '../pages/profile-page';
-import { ApiHelpers } from '../utils/api-helpers';
-import { TestDataBuilder } from '../config/test-data';
-import { loginViaUi } from '../utils/auth-flow';
-import { deleteTestUser } from '../utils/test-user-cleanup';
-import { recordLeakedUser } from '../utils/test-user-registry';
+import LoginPage from '@pages/login-page';
+import RegisterPage from '@pages/register-page';
+import BookStorePage from '@pages/book-store-page';
+import BookDetailsPage from '@pages/book-details-page';
+import ProfilePage from '@pages/profile-page';
+import { ApiHelpers } from '@utils/api-helpers';
+import { TestDataBuilder } from '@config/test-data';
+import { loginViaUi } from '@utils/auth-flow';
+import { deleteTestUser } from '@utils/test-user-cleanup';
+import { recordLeakedUser } from '@utils/test-user-registry';
+import { getApiBaseUrl } from '@config/environments';
 
 type ApiTestUser = {
     userId: string;
     userName: string;
     password: string;
     token: string;
+};
+
+// Declared as a Playwright option so the API host is set in `playwright.config.ts`
+// next to `baseURL` and can be overridden per project, instead of each `ApiHelpers`
+// instance reaching into environment config on its own.
+type TestOptions = {
+    apiBaseUrl: string;
 };
 
 type Pages = {
@@ -28,7 +36,8 @@ type Pages = {
     loggedInApiUser: ApiTestUser;
 };
 
-const testPages = baseTest.extend<Pages>({
+const testPages = baseTest.extend<Pages & TestOptions>({
+    apiBaseUrl: [getApiBaseUrl(), { option: true }],
     loginPage: async ({ page }, use) => {
         await use(new LoginPage(page));
     },
@@ -44,8 +53,8 @@ const testPages = baseTest.extend<Pages>({
     profilePage: async ({ page }, use) => {
         await use(new ProfilePage(page));
     },
-    apiHelpers: async ({ request }, use) => {
-        await use(new ApiHelpers(request));
+    apiHelpers: async ({ request, apiBaseUrl }, use) => {
+        await use(new ApiHelpers(request, apiBaseUrl));
     },
     apiTestUser: async ({ apiHelpers }, use, testInfo) => {
         const user = TestDataBuilder.createRandomUser();
@@ -88,4 +97,4 @@ const testPages = baseTest.extend<Pages>({
 export const test = testPages;
 export const expect = testPages.expect;
 
-export type { ApiTestUser };
+export type { ApiTestUser, TestOptions };

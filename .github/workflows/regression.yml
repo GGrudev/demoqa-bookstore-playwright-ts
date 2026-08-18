@@ -13,6 +13,7 @@ on:
           - regression
           - api
           - e2e
+          - cross-browser
           - all
       workers:
         description: Parallel workers per job (1-4)
@@ -49,7 +50,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4.4.0
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
@@ -86,18 +87,31 @@ jobs:
             WORKERS="2"
           fi
 
+          # `browsers` drives the Playwright install step, so a job only downloads the
+          # engines it actually runs.
+          SMOKE='{"id":"smoke","npm_script":"test:smoke","artifact":"smoke","browsers":"chromium"}'
+          API='{"id":"api","npm_script":"test:api","artifact":"api","browsers":""}'
+          E2E='{"id":"e2e","npm_script":"test:e2e","artifact":"e2e","browsers":"chromium"}'
+          CROSS='{"id":"cross-browser","npm_script":"test:cross-browser","artifact":"cross-browser","browsers":"firefox webkit"}'
+
           case "$SUITE" in
             smoke)
-              MATRIX='{"include":[{"id":"smoke","npm_script":"test:smoke","artifact":"smoke"}]}'
+              MATRIX="{\"include\":[$SMOKE]}"
               ;;
             api)
-              MATRIX='{"include":[{"id":"api","npm_script":"test:api","artifact":"api"}]}'
+              MATRIX="{\"include\":[$API]}"
               ;;
             e2e)
-              MATRIX='{"include":[{"id":"e2e","npm_script":"test:e2e","artifact":"e2e"}]}'
+              MATRIX="{\"include\":[$E2E]}"
               ;;
-            all|regression)
-              MATRIX='{"include":[{"id":"api","npm_script":"test:api","artifact":"api"},{"id":"e2e","npm_script":"test:e2e","artifact":"e2e"}]}'
+            cross-browser)
+              MATRIX="{\"include\":[$CROSS]}"
+              ;;
+            regression)
+              MATRIX="{\"include\":[$API,$E2E]}"
+              ;;
+            all)
+              MATRIX="{\"include\":[$API,$E2E,$CROSS]}"
               ;;
             *)
               echo "Unknown suite: $SUITE"
@@ -124,32 +138,32 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4.4.0
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
       - name: Resolve Playwright version
-        if: matrix.id != 'api'
+        if: matrix.browsers != ''
         id: playwright-version
         run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
 
       - name: Cache Playwright browsers
-        if: matrix.id != 'api'
+        if: matrix.browsers != ''
         id: playwright-cache
         uses: actions/cache@v4.2.4
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}-${{ matrix.id }}
 
-      - name: Install Playwright browser (cache miss)
-        if: matrix.id != 'api' && steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright browsers (cache miss)
+        if: matrix.browsers != '' && steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps ${{ matrix.browsers }}
 
       - name: Install Playwright OS dependencies (cache hit)
-        if: matrix.id != 'api' && steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
+        if: matrix.browsers != '' && steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps ${{ matrix.browsers }}
 
       - name: Run ${{ matrix.id }} tests
         run: npm run ${{ matrix.npm_script }}

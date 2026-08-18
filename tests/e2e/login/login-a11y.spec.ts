@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { test, expect } from '../../../fixtures/page-fixtures';
+import { test, expect } from '@fixtures/page-fixtures';
 
 test.describe(
     'Login accessibility',
@@ -11,12 +11,15 @@ test.describe(
             await loginPage.goToLogin();
             await loginPage.verifyLoginPageElements();
 
-            // DemoQA's ToolsQA banner image has no alt text (third-party markup).
-            // Exclude that known rule so this test validates our a11y gate wiring
-            // without failing forever on an upstream logo we cannot fix.
+            // Scope the scan to the application. DemoQA embeds third-party ad iframes
+            // whose creatives ship unlabelled images, and the ToolsQA banner is upstream
+            // markup — neither is ours to fix, and the ad slots vary between page loads.
+            // Excluding those regions keeps every rule (including `image-alt`) active on
+            // the application's own markup, which disabling the rule outright would not.
             const results = await new AxeBuilder({ page })
                 .withTags(['wcag2a', 'wcag2aa'])
-                .disableRules(['image-alt'])
+                .exclude('iframe[id^="google_ads_iframe"]')
+                .exclude('img[src*="Toolsqa"]')
                 .analyze();
 
             await test.info().attach('axe-violations', {

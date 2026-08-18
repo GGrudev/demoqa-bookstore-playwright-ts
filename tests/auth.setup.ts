@@ -1,7 +1,7 @@
 import { test as setup } from '@playwright/test';
-import LoginPage from '../pages/login-page';
-import { TestDataBuilder } from '../config/test-data';
-import { STATIC_USER_STORAGE_STATE, ensureAuthDir } from '../utils/auth-storage';
+import LoginPage from '@pages/login-page';
+import { TestDataBuilder } from '@config/test-data';
+import { STATIC_USER_STORAGE_STATE, ensureAuthDir } from '@utils/auth-storage';
 
 // Authenticates the shared static user once and persists the session so the
 // `authenticated` project can reuse it via `storageState` without logging in per test.

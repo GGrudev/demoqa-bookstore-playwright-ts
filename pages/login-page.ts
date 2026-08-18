@@ -1,5 +1,5 @@
 import { Locator, Page, expect } from '@playwright/test';
-import { BasePage } from '../utils/base-page';
+import { BasePage } from '@utils/base-page';
 
 export default class LoginPage extends BasePage {
     readonly heading: Locator;

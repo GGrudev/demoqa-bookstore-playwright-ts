@@ -1,6 +1,6 @@
 import { Locator, Page, expect } from '@playwright/test';
-import { BasePage } from '../utils/base-page';
-import { BookData } from '../config/test-data';
+import { BasePage } from '@utils/base-page';
+import { BookData } from '@config/test-data';
 
 export default class BookDetailsPage extends BasePage {
     readonly isbnValue: Locator;
