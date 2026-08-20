@@ -276,9 +276,7 @@ test.describe(
 
                 expect(response.status).toBe(200);
 
-                // Recorded rather than asserted. DemoQA is shared public infrastructure,
-                // so a latency threshold here would gate the suite on the internet and
-                // the demo host instead of on the application.
+                // Don't assert a latency cap — that would gate on DemoQA and the network.
                 testInfo.annotations.push({
                     type: 'latency',
                     description: `GET /BookStore/v1/Books took ${durationMs}ms`,

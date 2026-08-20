@@ -22,15 +22,12 @@ export default tseslint.config(
     {
         files: ['**/*.ts'],
         rules: {
-            // Errors, not warnings: `npm run lint` also runs with --max-warnings=0, so
-            // anything reported here fails CI rather than scrolling past in the log.
             '@typescript-eslint/no-unused-vars': [
                 'error',
                 { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
             ],
             '@typescript-eslint/no-explicit-any': 'error',
-            // Assertions legitimately live in page-object methods (`verifyLoginPageElements`,
-            // `expectLoggedIn`), so calling one counts as asserting for this rule.
+            // Page-object helpers like verifyLoginPageElements count as assertions.
             'playwright/expect-expect': [
                 'error',
                 { assertFunctionPatterns: ['^verify', '^expect'] },

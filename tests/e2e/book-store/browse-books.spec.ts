@@ -41,8 +41,7 @@ test.describe(
 
             await test.step('Verify search results contain the book', async () => {
                 await bookStorePage.verifyBookIsDisplayed(searchQuery);
-                // Poll rather than snapshot: the DemoQA table filters client-side,
-                // so the row list may not be settled the instant the fill resolves.
+                // Table filters client-side; wait until the row list settles.
                 await expect
                     .poll(() => bookStorePage.getBookTitles(), { timeout: timeouts.uiSettle })
                     .toContain(searchQuery);

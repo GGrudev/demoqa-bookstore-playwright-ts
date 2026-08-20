@@ -18,9 +18,6 @@ type ApiTestUser = {
     token: string;
 };
 
-// Declared as a Playwright option so the API host is set in `playwright.config.ts`
-// next to `baseURL` and can be overridden per project, instead of each `ApiHelpers`
-// instance reaching into environment config on its own.
 type TestOptions = {
     apiBaseUrl: string;
 };
@@ -70,10 +67,7 @@ const testPages = baseTest.extend<Pages & TestOptions>({
             const cleanup = await deleteTestUser(apiHelpers, apiTestUser);
 
             if (!cleanup.ok) {
-                // Teardown talks to a public demo site, so a failure here says nothing
-                // about the test that just ran and must not turn it red. Surface it on
-                // the report and hand the account to globalTeardown, which retries the
-                // deletion once the run is over.
+                // Cleanup failed; annotate and retry in globalTeardown.
                 testInfo.annotations.push({
                     type: 'cleanup-failed',
                     description: `${apiTestUser.userName} (${apiTestUser.userId}): ${cleanup.reason}`,

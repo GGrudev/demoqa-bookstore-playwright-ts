@@ -9,10 +9,7 @@ export type LeakedUser = DeletableUser & {
     reason: string;
 };
 
-// Playwright runs specs in worker processes, so a worker cannot hand a failed cleanup
-// back to `globalTeardown` in memory. Leaks are appended to a JSONL file instead and
-// drained once the run finishes. Only failures are written, so the file is empty in
-// the normal case and appends stay small enough not to interleave.
+// Workers cannot pass failed cleanups to globalTeardown in memory, so leaks go to a file.
 export async function recordLeakedUser(user: LeakedUser): Promise<void> {
     await fs.mkdir(REGISTRY_DIR, { recursive: true });
     await fs.appendFile(LEAKED_USERS_FILE, `${JSON.stringify(user)}\n`, 'utf8');

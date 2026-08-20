@@ -3,9 +3,7 @@ import LoginPage from '@pages/login-page';
 import { TestDataBuilder } from '@config/test-data';
 import { STATIC_USER_STORAGE_STATE, ensureAuthDir } from '@utils/auth-storage';
 
-// Authenticates the shared static user once and persists the session so the
-// `authenticated` project can reuse it via `storageState` without logging in per test.
-// Tagged @e2e so it is not filtered out when the suite is selected with `--grep @e2e`.
+// Tagged @e2e so `--grep @e2e` still runs this setup project.
 setup('authenticate static user', { tag: '@e2e' }, async ({ page }) => {
     const user = TestDataBuilder.createValidUser();
     const loginPage = new LoginPage(page);

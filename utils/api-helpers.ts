@@ -17,21 +17,12 @@ type ApiResult<T> = {
     body: T;
 };
 
-// Typed client for the DemoQA account and book endpoints.
-//
-// Responses are returned verbatim as `body: unknown`: this client is used for test
-// *setup* as well as assertions, so it must not decide which contract applies. Specs
-// parse the schema that fits their scenario (success or error) via `parseApiResponse`,
-// which keeps strict contract enforcement in the API specs where a failure is a real
-// finding — instead of failing every UI test that merely creates a user first.
-//
-// Outgoing payloads are still validated here, since a malformed request is a bug in
-// the test code and should fail before it reaches the network.
+// Returns bodies as `unknown`. Specs parse the contract; this client also does setup,
+// so it does not apply a success schema to every response. Request payloads are still
+// validated here — a bad request is a test bug.
 export class ApiHelpers {
     private readonly baseUrl: string;
 
-    // `baseUrl` is injectable so the offline suite can point this client at a local
-    // stub server without touching environment configuration.
     constructor(
         private readonly request: APIRequestContext,
         baseUrl: string = getApiBaseUrl()
@@ -156,9 +147,7 @@ export class ApiHelpers {
         return { status: response.status(), body: await response.json() };
     }
 
-    // ── Setup helper: create user and get token in one call ──
-    //
-    // Validates only the fields the fixtures consume, using the loose envelope schemas.
+    // Loose envelopes: only the fields fixtures need (user id, token).
 
     async createUserAndGetToken(userName: string, password: string) {
         const userResponse = await this.createUser(userName, password);

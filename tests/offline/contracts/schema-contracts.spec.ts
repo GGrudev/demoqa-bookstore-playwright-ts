@@ -16,9 +16,6 @@ import tokenFailure from '../recorded/token-failure.json';
 import tokenSuccess from '../recorded/token-success.json';
 import userWithBook from '../recorded/user-with-book.json';
 
-// Runs against payloads recorded from DemoQA, so it needs no network and can gate
-// every pull request. The negative cases below are the point of the suite: they prove
-// the strict schemas actually reject drift rather than passing everything through.
 test.describe(
     'API contracts (offline)',
     {
@@ -84,8 +81,6 @@ test.describe(
             expect(() => parseApiResponse(BookSchema, drifted)).toThrow(/website/);
         });
 
-        // The loose envelopes exist so setup code survives additive API changes that
-        // must still be caught by the strict contracts above.
         test('setup envelopes tolerate added fields that the strict contracts reject', () => {
             const drifted = { ...createdUser, loyaltyTier: 'gold' };
 

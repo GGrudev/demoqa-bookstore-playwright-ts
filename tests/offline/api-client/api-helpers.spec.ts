@@ -8,9 +8,6 @@ import userWithBook from '../recorded/user-with-book.json';
 const TOKEN = 'stub-bearer-token';
 const USER_ID = createdUser.userID;
 
-// Exercises the real ApiHelpers client against an in-process stub: request shape,
-// auth headers, query params, and status/body passthrough. No DemoQA traffic, so this
-// suite gates every pull request.
 test.describe(
     'ApiHelpers client (offline)',
     {
@@ -97,8 +94,6 @@ test.describe(
             stubApi,
             stubServer,
         }) => {
-            // A field DemoQA might add tomorrow. Setup must survive it; the offline
-            // contract spec is what fails so the drift is still reported.
             stubServer.queueResponse({
                 status: 200,
                 body: { ...userWithBook, loyaltyTier: 'gold' },

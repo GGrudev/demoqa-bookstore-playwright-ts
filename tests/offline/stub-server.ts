@@ -15,10 +15,6 @@ export type StubResponse = {
     body?: unknown;
 };
 
-// Minimal in-process HTTP stub used by the offline suite. It records what the client
-// sent and replays queued responses, so `ApiHelpers` can be verified end to end —
-// URLs, query params, auth headers, request payloads, status/body passthrough —
-// without any traffic leaving the runner.
 export class StubServer {
     private readonly server: Server;
     private readonly queued: StubResponse[] = [];

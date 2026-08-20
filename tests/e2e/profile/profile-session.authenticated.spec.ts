@@ -1,8 +1,6 @@
 import { test, expect } from '@fixtures/page-fixtures';
 import { TestDataBuilder } from '@config/test-data';
 
-// These specs run in the `authenticated` project, which reuses the session
-// created once by tests/auth.setup.ts via storageState (no per-test UI login).
 const staticUser = TestDataBuilder.createValidUser();
 
 test.describe(

@@ -10,7 +10,6 @@ export default class BookStorePage extends BasePage {
         this.books = new BooksTable(page);
     }
 
-    /** Root table locator — kept for tests that assert table visibility. */
     get booksTable() {
         return this.books.root;
     }

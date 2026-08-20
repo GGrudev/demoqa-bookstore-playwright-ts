@@ -41,8 +41,7 @@ export default class LoginPage extends BasePage {
     }
 
     async verifyRequiredFieldValidation() {
-        // DemoQA exposes required-field state through Bootstrap's validation class
-        // but does not render an accessible validation message for these inputs.
+        // No accessible validation message; DemoQA only adds Bootstrap's is-invalid class.
         await expect(this.userNameInput).toHaveClass(/is-invalid/);
         await expect(this.passwordInput).toHaveClass(/is-invalid/);
     }
