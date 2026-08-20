@@ -3,17 +3,13 @@ import { getTimeouts } from '@config/environments';
 
 const timeouts = getTimeouts();
 
-// Shared books table + search UI used on Book Store and Profile.
-// Extracted so row/title/search behavior lives in one place (composition over copy-paste).
 export class BooksTable {
     readonly root: Locator;
     readonly searchBox: Locator;
     readonly rows: Locator;
 
-    // Book Store and Profile render the same table under different wrappers
-    // (`books-wrapper` vs `profile-wrapper`), so the owning page object supplies its
-    // own. Defaulting to a wrapper that does not exist on the page silently yields an
-    // empty table, which makes "no books" assertions pass without checking anything.
+    // Book Store uses books-wrapper; Profile uses profile-wrapper. Wrong wrapper
+    // matches nothing, so "0 books" assertions pass without checking the table.
     constructor(
         private readonly page: Page,
         rootSelector: string = 'div.books-wrapper table'
@@ -23,9 +19,8 @@ export class BooksTable {
         this.rows = this.root.locator('tbody > tr');
     }
 
-    // The DemoQA book list is fetched asynchronously after navigation. Waiting for
-    // the first row to render prevents searches from running against an empty table
-    // (a race that otherwise surfaces as intermittent "0 results" failures).
+    // Book list is fetched after navigation; searching before the first row appears
+    // looks like "0 results".
     async waitForLoaded() {
         await expect(this.root).toBeVisible({ timeout: timeouts.asyncList });
         await expect(this.root.locator('tbody a').first()).toBeVisible({
@@ -45,9 +40,6 @@ export class BooksTable {
         await this.searchBox.clear();
     }
 
-    // One round trip rather than two per row: this runs on every iteration of the
-    // `expect.poll` loops that wait for the client-side filter to settle, so a
-    // per-row visibility check makes the polls markedly slower on a full table.
     async getTitles(): Promise<string[]> {
         const titles = await this.root.locator('tbody a:visible').allInnerTexts();
 

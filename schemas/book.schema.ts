@@ -1,7 +1,5 @@
 import { z } from 'zod';
 
-// strictObject rejects unexpected/renamed fields, so a drifting API contract
-// (added, removed, or retyped fields) fails loudly instead of passing silently.
 export const BookSchema = z.strictObject({
     isbn: z.string().min(10),
     title: z.string().min(1),

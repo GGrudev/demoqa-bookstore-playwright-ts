@@ -30,9 +30,7 @@ export const ApiErrorSchema = z.strictObject({
     message: z.string(),
 });
 
-// Setup envelopes. Deliberately loose and limited to the fields fixtures depend on:
-// a new or renamed DemoQA field must fail the contract specs above, not every test
-// that happens to create a user during setup.
+// Loose: fixtures only need these fields. Extra API fields belong in the contract specs.
 export const CreatedUserEnvelopeSchema = z.looseObject({
     userID: z.string().min(1),
     username: z.string().min(1),

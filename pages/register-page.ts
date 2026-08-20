@@ -13,7 +13,7 @@ export default class RegisterPage extends BasePage {
     constructor(page: Page) {
         super(page);
 
-        // DemoQA protects registration with reCAPTCHA, so tests cover navigation and form visibility only.
+        // reCAPTCHA blocks submit; this page object only covers the form itself.
         this.heading = page.getByText('Register to Book Store');
         this.firstNameInput = page.locator('#firstname');
         this.lastNameInput = page.locator('#lastname');

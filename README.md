@@ -6,7 +6,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-6.x-blue?logo=typescript&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 
-Playwright + TypeScript UI and API tests for the [DemoQA Book Store](https://demoqa.com/books). DemoQA is a shared public site, so the suite is built around that constraint rather than around a feature checklist.
+Playwright + TypeScript UI and API tests for the [DemoQA Book Store](https://demoqa.com/books).
 
 ## Why it is built this way
 
@@ -22,7 +22,7 @@ Playwright + TypeScript UI and API tests for the [DemoQA Book Store](https://dem
 
 The offline suite asserts that split: the same drifted payload must fail the strict contract and pass the setup envelope.
 
-**Mutating tests own their data.** `apiTestUser` creates a unique user and deletes it afterward. Cleanup is housekeeping: a teardown failure annotates the test and `globalTeardown` retries, instead of turning a passing scenario red because DemoQA would not delete the account.
+**Mutating tests own their data.** `apiTestUser` creates a unique user and deletes it afterward. If that delete fails, the test is annotated and `globalTeardown` retries; the scenario itself is not marked failed.
 
 **Hybrid tests set up through the API, then log in through the UI.** DemoQA invalidates the browser session if API calls happen after login, so the order is fixed:
 

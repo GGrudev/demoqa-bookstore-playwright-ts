@@ -75,8 +75,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Recorded payloads plus an in-process stub server: no browser, no DemoQA
-      # traffic, so this runs on every push and pull request.
       - name: Run offline tests
         run: npm run test:offline
         env:
@@ -128,8 +126,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # API tests use Playwright's request context only (no browser), so no
-      # browser download is needed here.
       - name: Run API tests
         run: npm run test:api
         env:

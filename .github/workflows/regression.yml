@@ -25,8 +25,7 @@ on:
           - '2'
           - '4'
   schedule:
-    # Weekly full regression (Sunday 06:00 UTC). Kept off push/PR to limit
-    # traffic against the public DemoQA site; run manually any time via dispatch.
+    # Weekly (Sunday 06:00 UTC). Not on push/PR — DemoQA is a shared public site.
     - cron: '0 6 * * 0'
 
 concurrency:
