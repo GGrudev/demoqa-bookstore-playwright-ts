@@ -19,7 +19,7 @@ export class ConfirmDialog {
         this.page.once('dialog', (dialog) => {
             void dialog.accept().catch(() => undefined);
         });
-        await confirmButton.evaluate((button) => (button as HTMLButtonElement).click());
+        await confirmButton.click();
         if (waitToClose) {
             await expect(confirmButton).toBeHidden({ timeout: timeouts.uiSettle });
         }
