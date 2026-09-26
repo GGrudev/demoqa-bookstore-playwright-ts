@@ -35,10 +35,18 @@ export default class ProfilePage extends BasePage {
         await this.deleteAllBooksButton.scrollIntoViewIfNeeded();
         await this.deleteAllBooksButton.click();
         const dialog = this.page.getByRole('dialog', { name: 'Delete All Books' });
+        const deleteResponsePromise = this.page.waitForResponse(
+            (response) =>
+                response.request().method() === 'DELETE' &&
+                new URL(response.url()).pathname === '/BookStore/v1/Books',
+            { timeout: timeouts.uiSettle }
+        );
         await this.confirmDialog.confirmWithOptionalAlert(
             dialog.getByRole('button', { name: 'OK' }),
             false
         );
+        const deleteResponse = await deleteResponsePromise;
+        expect(deleteResponse.status()).toBe(204);
         // Delete All Books updates the server but does not refresh the table.
         await this.page.reload();
         await this.verifyNoBooksInProfile();

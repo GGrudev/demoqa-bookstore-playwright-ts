@@ -28,16 +28,14 @@ test.describe(
             {
                 tag: ['@smoke'],
             },
-            async ({ loginPage }) => {
-                const validUser = TestDataBuilder.createValidUser();
-
+            async ({ apiTestUser, loginPage }) => {
                 await test.step('Login with valid credentials', async () => {
-                    await loginPage.login(validUser.userName, validUser.password);
+                    await loginPage.login(apiTestUser.userName, apiTestUser.password);
                 });
 
                 await test.step('Verify user is logged in', async () => {
                     await expect(loginPage.page).toHaveURL(/\/profile$/);
-                    await loginPage.header.expectLoggedIn(validUser.userName);
+                    await loginPage.header.expectLoggedIn(apiTestUser.userName);
                 });
             }
         );
@@ -60,12 +58,10 @@ test.describe(
             });
         });
 
-        test('Logout after successful login', async ({ loginPage }) => {
-            const validUser = TestDataBuilder.createValidUser();
-
+        test('Logout after successful login', async ({ apiTestUser, loginPage }) => {
             await test.step('Login with valid credentials', async () => {
-                await loginPage.login(validUser.userName, validUser.password);
-                await loginPage.header.expectLoggedIn(validUser.userName);
+                await loginPage.login(apiTestUser.userName, apiTestUser.password);
+                await loginPage.header.expectLoggedIn(apiTestUser.userName);
             });
 
             await test.step('Logout and verify login page is displayed', async () => {

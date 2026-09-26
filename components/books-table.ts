@@ -51,7 +51,7 @@ export class BooksTable {
     }
 
     titleLink(title: string): Locator {
-        return this.page.locator('div>span>a', { hasText: title });
+        return this.root.getByRole('link', { name: title, exact: true });
     }
 
     async expectTitleVisible(title: string) {
@@ -67,6 +67,6 @@ export class BooksTable {
     }
 
     rowByTitle(title: string): Locator {
-        return this.page.getByRole('row', { name: new RegExp(title) });
+        return this.root.getByRole('row', { name: new RegExp(title) });
     }
 }
