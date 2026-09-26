@@ -24,7 +24,7 @@ export default class ProfilePage extends BasePage {
     }
 
     get booksTable() {
-        return this.books.root;
+        return this.books.table;
     }
 
     async getBookTitlesInProfile(): Promise<string[]> {

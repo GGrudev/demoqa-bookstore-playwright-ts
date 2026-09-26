@@ -16,20 +16,20 @@ export class Header {
         );
     }
 
-    async expectLoggedIn(expectedUserName: string): Promise<void> {
+    async expectLoggedIn(expectedUserName: string) {
         await expect(this.userNameValue).toHaveText(expectedUserName);
         await expect(this.logoutButton).toBeVisible();
     }
 
-    async expectLoggedOut(): Promise<void> {
+    async expectLoggedOut() {
         await expect(this.loginButton).toBeVisible();
     }
 
-    async expectNotLoggedInMessage(): Promise<void> {
+    async expectNotLoggedInMessage() {
         await expect(this.notLoggedInMessage).toBeVisible();
     }
 
-    async logout(): Promise<void> {
+    async logout() {
         await this.logoutButton.click();
     }
 }

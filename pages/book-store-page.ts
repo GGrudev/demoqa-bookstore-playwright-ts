@@ -11,7 +11,7 @@ export default class BookStorePage extends BasePage {
     }
 
     get booksTable() {
-        return this.books.root;
+        return this.books.table;
     }
 
     async waitForBooksLoaded() {

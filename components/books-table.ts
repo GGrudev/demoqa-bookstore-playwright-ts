@@ -4,32 +4,32 @@ import { getTimeouts } from '@config/environments';
 const timeouts = getTimeouts();
 
 export class BooksTable {
-    readonly root: Locator;
+    readonly table: Locator;
     readonly searchBox: Locator;
-    readonly rows: Locator;
+    readonly tableRows: Locator;
 
     // Book Store uses books-wrapper; Profile uses profile-wrapper. Wrong wrapper
     // matches nothing, so "0 books" assertions pass without checking the table.
     constructor(
         private readonly page: Page,
-        rootSelector: string = 'div.books-wrapper table'
+        wrapperSelector: string = 'div.books-wrapper table'
     ) {
-        this.root = page.locator(rootSelector);
+        this.table = page.locator(wrapperSelector);
         this.searchBox = page.locator('#searchBox');
-        this.rows = this.root.locator('tbody > tr');
+        this.tableRows = this.table.locator('tbody > tr');
     }
 
     // Book list is fetched after navigation; searching before the first row appears
     // looks like "0 results".
     async waitForLoaded() {
-        await expect(this.root).toBeVisible({ timeout: timeouts.asyncList });
-        await expect(this.root.locator('tbody a').first()).toBeVisible({
+        await expect(this.table).toBeVisible({ timeout: timeouts.asyncList });
+        await expect(this.table.locator('tbody a').first()).toBeVisible({
             timeout: timeouts.asyncList,
         });
     }
 
     async expectVisible() {
-        await expect(this.root).toBeVisible();
+        await expect(this.table).toBeVisible();
     }
 
     async search(query: string) {
@@ -41,7 +41,7 @@ export class BooksTable {
     }
 
     async getTitles(): Promise<string[]> {
-        const titles = await this.root.locator('tbody a:visible').allInnerTexts();
+        const titles = await this.table.locator('tbody a:visible').allInnerTexts();
 
         return titles.map((title) => title.trim());
     }
@@ -63,7 +63,7 @@ export class BooksTable {
     }
 
     rowByIsbn(isbn: string): Locator {
-        return this.root.locator(`tbody > tr:has(a[href*="${isbn}"])`);
+        return this.table.locator(`tbody > tr:has(a[href*="${isbn}"])`);
     }
 
     rowByTitle(title: string): Locator {
