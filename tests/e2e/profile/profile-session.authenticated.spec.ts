@@ -1,8 +1,6 @@
 import { test, expect } from '@fixtures/page-fixtures';
 import { TestDataBuilder } from '@config/test-data';
 
-// These specs run in the `authenticated` project, which reuses the session
-// created once by tests/auth.setup.ts via storageState (no per-test UI login).
 const staticUser = TestDataBuilder.createValidUser();
 
 test.describe(
@@ -11,16 +9,22 @@ test.describe(
         tag: ['@e2e', '@profile'],
     },
     () => {
-        test('Logged in user can view their profile', async ({ profilePage }) => {
-            await test.step('Navigate to profile', async () => {
-                await profilePage.goToProfile();
-            });
+        test(
+            'Logged in user can view their profile',
+            {
+                tag: ['@smoke'],
+            },
+            async ({ profilePage }) => {
+                await test.step('Navigate to profile', async () => {
+                    await profilePage.goToProfile();
+                });
 
-            await test.step('Verify profile page elements', async () => {
-                await profilePage.header.expectLoggedIn(staticUser.userName);
-                await profilePage.expectProfileControlsVisible();
-            });
-        });
+                await test.step('Verify profile page elements', async () => {
+                    await profilePage.header.expectLoggedIn(staticUser.userName);
+                    await profilePage.expectProfileControlsVisible();
+                });
+            }
+        );
 
         test('Navigate from profile to book store', async ({ profilePage, bookStorePage }) => {
             await test.step('Go to profile', async () => {

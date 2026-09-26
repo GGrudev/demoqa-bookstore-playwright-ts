@@ -7,11 +7,8 @@ type StubFixtures = {
     stubApi: ApiHelpers;
 };
 
-// Wires the real `ApiHelpers` to a per-test stub server. Nothing here touches DemoQA,
-// so these tests are safe to run on every push and pull request.
 export const test = base.extend<StubFixtures>({
-    // The empty destructuring pattern is required: Playwright inspects it to work out
-    // a fixture's dependencies, and this one has none.
+    // Playwright reads fixture deps from the destructuring; this fixture has none.
     stubServer: async ({}, use) => {
         const server = await StubServer.start();
         try {

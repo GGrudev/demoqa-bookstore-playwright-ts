@@ -10,13 +10,9 @@ export type DeletableUser = {
 
 export type CleanupResult = { ok: true } | { ok: false; reason: string };
 
-// Deletes an isolated API user, minting a fresh token first: DemoQA invalidates a
-// user's previous token whenever a new one is generated, so a test that exercised
-// token rotation leaves the fixture holding a dead token.
-//
-// Returns a result instead of throwing. Cleanup runs during teardown on a public demo
-// site, and a hiccup there must not be able to fail a test that already passed — the
-// callers decide how to report it.
+// DemoQA invalidates the previous token when a new one is generated, so a test that
+// rotated tokens leaves the fixture holding a dead one — mint a fresh token here.
+// Returns a result instead of throwing; callers decide how to report teardown failures.
 export async function deleteTestUser(
     apiHelpers: ApiHelpers,
     user: DeletableUser

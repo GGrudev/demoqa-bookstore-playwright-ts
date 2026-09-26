@@ -4,8 +4,6 @@ import { getEnvironment } from './config/environments';
 import { STATIC_USER_STORAGE_STATE } from './utils/auth-storage';
 import type { TestOptions } from './fixtures/page-fixtures';
 
-// Load local `.env` before reading DEMOQA_* / ENV values. CI injects secrets via
-// the workflow environment, so an absent `.env` file is fine there.
 loadEnv({ quiet: true });
 
 const isCI = !!process.env.CI;
@@ -17,8 +15,7 @@ const desktopChrome = { ...devices['Desktop Chrome'], viewport: desktopViewport 
 const desktopFirefox = { ...devices['Desktop Firefox'], viewport: desktopViewport };
 const desktopSafari = { ...devices['Desktop Safari'], viewport: desktopViewport };
 
-// Specs matching this pattern reuse the shared authenticated session and run in
-// the dedicated `authenticated` project (which depends on the `setup` project).
+// Authenticated specs reuse storageState from the setup project.
 const AUTHENTICATED_SPECS = /.*\.authenticated\.spec\.ts/;
 const API_SPECS = /.*\/api\/.*\.spec\.ts/;
 const OFFLINE_SPECS = /.*\/offline\/.*\.spec\.ts/;
@@ -29,8 +26,6 @@ const ciWorkers = process.env.PLAYWRIGHT_WORKERS
 
 export default defineConfig<TestOptions>({
     testDir: './tests',
-    // Retries deletion of any isolated user whose per-test cleanup failed, so a
-    // teardown hiccup cannot strand accounts on DemoQA. No-op when nothing leaked.
     globalTeardown: './utils/global-teardown.ts',
     fullyParallel: true,
     forbidOnly: isCI,
@@ -47,8 +42,6 @@ export default defineConfig<TestOptions>({
             },
         ],
         ['junit', { outputFile: 'test-results/junit.xml' }],
-        // Annotates failures inline on the PR diff, so a reviewer sees them without
-        // opening the job log or downloading the HTML report artifact.
         ...(isCI ? [['github'] as const] : []),
     ],
 
@@ -60,8 +53,6 @@ export default defineConfig<TestOptions>({
 
     use: {
         baseURL: env.baseUrl,
-        // Consumed by the `apiHelpers` fixture. Kept beside `baseURL` so both hosts are
-        // declared in one place and either can be overridden per project.
         apiBaseUrl: env.apiBaseUrl,
         headless: isHeadless,
         trace: isCI ? 'on-first-retry' : 'retain-on-failure',
@@ -78,22 +69,16 @@ export default defineConfig<TestOptions>({
             use: desktopChrome,
         },
         {
-            // Schema contracts and ApiHelpers behaviour against recorded payloads and a
-            // local stub server. No browser and no DemoQA traffic, so this project gates
-            // every push and pull request (`npm run test:offline`).
             name: 'offline',
             testMatch: OFFLINE_SPECS,
         },
         {
-            // Request-context API tests — no browser dependency in CI when this
-            // project is selected alone (`npm run test:api`).
             name: 'api',
             testMatch: API_SPECS,
         },
         {
             name: 'chromium',
             use: desktopChrome,
-            // Authenticated, API, and offline specs have dedicated projects.
             testIgnore: [AUTHENTICATED_SPECS, API_SPECS, OFFLINE_SPECS],
         },
         {
@@ -105,8 +90,6 @@ export default defineConfig<TestOptions>({
                 storageState: STATIC_USER_STORAGE_STATE,
             },
         },
-        // Chromium gates every run; these two are opt-in via `npm run test:cross-browser`
-        // or the regression workflow. See "Cross-browser strategy" in the README.
         {
             name: 'firefox',
             use: desktopFirefox,

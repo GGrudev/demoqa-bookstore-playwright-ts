@@ -24,7 +24,7 @@ export default class ProfilePage extends BasePage {
     }
 
     get booksTable() {
-        return this.books.root;
+        return this.books.table;
     }
 
     async getBookTitlesInProfile(): Promise<string[]> {
@@ -35,13 +35,19 @@ export default class ProfilePage extends BasePage {
         await this.deleteAllBooksButton.scrollIntoViewIfNeeded();
         await this.deleteAllBooksButton.click();
         const dialog = this.page.getByRole('dialog', { name: 'Delete All Books' });
+        const deleteResponsePromise = this.page.waitForResponse(
+            (response) =>
+                response.request().method() === 'DELETE' &&
+                new URL(response.url()).pathname === '/BookStore/v1/Books',
+            { timeout: timeouts.uiSettle }
+        );
         await this.confirmDialog.confirmWithOptionalAlert(
             dialog.getByRole('button', { name: 'OK' }),
             false
         );
-        // DemoQA clears the collection server-side but never re-renders the profile
-        // table, so the deleted rows stay on screen until the page is loaded again.
-        // Deleting a single book does re-render; only this bulk action does not.
+        const deleteResponse = await deleteResponsePromise;
+        expect(deleteResponse.status()).toBe(204);
+        // Delete All Books updates the server but does not refresh the table.
         await this.page.reload();
         await this.verifyNoBooksInProfile();
     }
@@ -56,9 +62,7 @@ export default class ProfilePage extends BasePage {
     }
 
     async verifyNoBooksInProfile() {
-        // Assert the table is actually on screen before counting rows. Polling the
-        // count alone would report zero — and pass — if the table locator stopped
-        // matching, turning this into an assertion that can never fail.
+        // Table must be visible; a missed locator would also report 0 rows.
         await expect(this.booksTable).toBeVisible();
         await expect
             .poll(async () => (await this.getBookTitlesInProfile()).length, {
@@ -76,7 +80,7 @@ export default class ProfilePage extends BasePage {
     async deleteBookByIsbn(isbn: string) {
         const row = this.books.rowByIsbn(isbn);
         await expect(row).toBeVisible();
-        // DemoQA renders the delete control as an unlabeled image inside the last cell.
+        // Delete control is an unlabeled image in the last cell.
         await row.locator('td').last().getByRole('img').click();
         await this.confirmDialog.confirmDeleteBook();
         await expect(row).toBeHidden();

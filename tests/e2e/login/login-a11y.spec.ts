@@ -11,11 +11,7 @@ test.describe(
             await loginPage.goToLogin();
             await loginPage.verifyLoginPageElements();
 
-            // Scope the scan to the application. DemoQA embeds third-party ad iframes
-            // whose creatives ship unlabelled images, and the ToolsQA banner is upstream
-            // markup — neither is ours to fix, and the ad slots vary between page loads.
-            // Excluding those regions keeps every rule (including `image-alt`) active on
-            // the application's own markup, which disabling the rule outright would not.
+            // Ads and the ToolsQA banner are third-party; leave image-alt on for the rest.
             const results = await new AxeBuilder({ page })
                 .withTags(['wcag2a', 'wcag2aa'])
                 .exclude('iframe[id^="google_ads_iframe"]')
