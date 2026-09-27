@@ -64,7 +64,7 @@ Accessibility is one login-page axe scan against WCAG 2.0/2.1 A and AA. Ad ifram
 
 ## Setup
 
-Requires Node.js 20.19 or newer (CI runs Node 22).
+Requires Node.js 24 or newer (CI runs Node 24).
 
 ```bash
 git clone https://github.com/GGrudev/demoqa-bookstore-playwright-ts.git
