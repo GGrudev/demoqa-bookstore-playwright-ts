@@ -8,6 +8,8 @@ loadEnv({ quiet: true });
 
 const isCI = !!process.env.CI;
 const isHeadless = process.env.HEADLESS === 'true' || isCI;
+// Blob reports are additive. CLI `--reporter=blob` would replace list/html/junit.
+const useBlobReport = process.env.PLAYWRIGHT_BLOB_REPORT === '1';
 const env = getEnvironment();
 
 const desktopViewport = { width: 1920, height: 1080 };
@@ -43,6 +45,7 @@ export default defineConfig<TestOptions>({
         ],
         ['junit', { outputFile: 'test-results/junit.xml' }],
         ...(isCI ? [['github'] as const] : []),
+        ...(useBlobReport ? [['blob', { outputDir: 'blob-report' }] as const] : []),
     ],
 
     timeout: env.timeout.default,

@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/GGrudev/demoqa-bookstore-playwright-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/GGrudev/demoqa-bookstore-playwright-ts/actions/workflows/ci.yml)
 [![Regression](https://github.com/GGrudev/demoqa-bookstore-playwright-ts/actions/workflows/regression.yml/badge.svg)](https://github.com/GGrudev/demoqa-bookstore-playwright-ts/actions/workflows/regression.yml)
-![Playwright](https://img.shields.io/badge/Playwright-1.58-blue?logo=playwright)
+![Playwright](https://img.shields.io/badge/Playwright-1.63-blue?logo=playwright)
 ![TypeScript](https://img.shields.io/badge/TypeScript-6.x-blue?logo=typescript&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 
@@ -65,6 +65,8 @@ utils/               API client, auth, cleanup, diagnostics
 
 Chromium is the UI gate. Firefox and WebKit are configured but opt-in (`npm run test:cross-browser`) — rendering differences on a third-party demo site are not defects this suite can act on.
 
+Weekly and manual regression split that Chromium and authenticated suite into two shards. Each shard writes a blob report; a follow-up job merges them into one HTML report. API, smoke, and cross-browser runs stay in a single job.
+
 Accessibility is one login-page axe scan against WCAG 2.0/2.1 A and AA. Ad iframes and the upstream ToolsQA banner are excluded by selector, so `image-alt` still runs on the application's own markup.
 
 ## Setup
@@ -88,12 +90,16 @@ npm test              # offline + API + Chromium UI + authenticated
 npm run test:offline  # no network, no browser, no credentials
 npm run test:api
 npm run test:e2e
+npm run test:e2e:shard:1   # first half of Chromium + authenticated
+npm run test:e2e:shard:2   # second half
 npm run test:smoke
 npm run lint
 npm run typecheck
 ```
 
-HTML report: `npm run test:report`. Failed CI runs upload the report, JUnit, and traces.
+HTML report: `npm run test:report`. Failed CI runs upload the report, JUnit, and traces. The merged end-to-end report is the `playwright-report-e2e-merged` artifact.
+
+To merge two local shards, copy each `blob-report/*.zip` into `all-blob-reports/` before the next shard starts (a new run clears `blob-report/`), then run `npm run test:report:merge`. Set `PLAYWRIGHT_BLOB_REPORT=1` for those shard runs.
 
 ## Known DemoQA limitations
 

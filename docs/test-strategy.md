@@ -134,11 +134,20 @@ and should be classified as an environment/data change before modifying assertio
 | Pull request / push      | Lint, typecheck, formatting, offline project                   | No                  |
 | Manual API run           | Quality checks and API project                                 | Yes                 |
 | Manual smoke run         | Quality checks, API smoke, Chromium smoke, authenticated smoke | Yes                 |
-| Weekly regression        | Quality checks, API and Chromium/authenticated E2E             | Yes                 |
+| Weekly regression        | Quality checks, API, and two Chromium/authenticated E2E shards | Yes                 |
 | Manual cross-browser run | Firefox and WebKit E2E                                         | Yes                 |
 
 CI forbids committed `test.only`, uses bounded workers, and retains Playwright
 diagnostics according to the configured retry/failure policy.
+
+Chromium and authenticated end-to-end tests are the only sharded suite. Two jobs
+each run half of that list. The selected worker budget is divided by two for each
+shard, with a floor of one: a budget of 2 keeps one browser per shard, a budget of
+4 keeps two, and a budget of 1 still uses one per shard. Each shard uploads a blob
+report. A merge job rebuilds one HTML report and one JUnit file when at least one
+shard finishes, including after a shard failure. The pull request gate, API, smoke,
+and cross-browser jobs are not sharded. The `setup` project is a dependency, so
+each shard that contains authenticated tests logs in the static user again.
 
 ## Entry and exit criteria
 
