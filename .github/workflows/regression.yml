@@ -71,6 +71,7 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
       workers: ${{ steps.set-matrix.outputs.workers }}
+      run_e2e: ${{ steps.set-matrix.outputs.run_e2e }}
 
     steps:
       - name: Build test matrix
@@ -86,13 +87,22 @@ jobs:
             WORKERS="2"
           fi
 
-          # `browsers` drives the Playwright install step, so a job only downloads the
-          # engines it actually runs.
-          SMOKE='{"id":"smoke","npm_script":"test:smoke","artifact":"smoke","browsers":"chromium"}'
-          API='{"id":"api","npm_script":"test:api","artifact":"api","browsers":""}'
-          E2E='{"id":"e2e","npm_script":"test:e2e","artifact":"e2e","browsers":"chromium"}'
-          CROSS='{"id":"cross-browser","npm_script":"test:cross-browser","artifact":"cross-browser","browsers":"firefox webkit"}'
+          # Split the worker budget across two shards (floor of 1). Budget 2 → one
+          # browser per shard. Budget 1 still runs one per shard.
+          SHARD_WORKERS=$(( WORKERS / 2 ))
+          if [ "$SHARD_WORKERS" -lt 1 ]; then
+            SHARD_WORKERS=1
+          fi
 
+          # `browsers` drives the Playwright install step, so a job only downloads the
+          # engines it actually runs. `shard` is empty unless the job should emit a blob.
+          SMOKE='{"id":"smoke","npm_script":"test:smoke","artifact":"smoke","browsers":"chromium","shard":""}'
+          API='{"id":"api","npm_script":"test:api","artifact":"api","browsers":"","shard":""}'
+          E2E1='{"id":"e2e-1","npm_script":"test:e2e:shard:1","artifact":"e2e-1","browsers":"chromium","shard":"1","workers":"'"$SHARD_WORKERS"'"}'
+          E2E2='{"id":"e2e-2","npm_script":"test:e2e:shard:2","artifact":"e2e-2","browsers":"chromium","shard":"2","workers":"'"$SHARD_WORKERS"'"}'
+          CROSS='{"id":"cross-browser","npm_script":"test:cross-browser","artifact":"cross-browser","browsers":"firefox webkit","shard":""}'
+
+          RUN_E2E=false
           case "$SUITE" in
             smoke)
               MATRIX="{\"include\":[$SMOKE]}"
@@ -101,16 +111,19 @@ jobs:
               MATRIX="{\"include\":[$API]}"
               ;;
             e2e)
-              MATRIX="{\"include\":[$E2E]}"
+              MATRIX="{\"include\":[$E2E1,$E2E2]}"
+              RUN_E2E=true
               ;;
             cross-browser)
               MATRIX="{\"include\":[$CROSS]}"
               ;;
             regression)
-              MATRIX="{\"include\":[$API,$E2E]}"
+              MATRIX="{\"include\":[$API,$E2E1,$E2E2]}"
+              RUN_E2E=true
               ;;
             all)
-              MATRIX="{\"include\":[$API,$E2E,$CROSS]}"
+              MATRIX="{\"include\":[$API,$E2E1,$E2E2,$CROSS]}"
+              RUN_E2E=true
               ;;
             *)
               echo "Unknown suite: $SUITE"
@@ -120,6 +133,7 @@ jobs:
 
           echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
           echo "workers=$WORKERS" >> "$GITHUB_OUTPUT"
+          echo "run_e2e=$RUN_E2E" >> "$GITHUB_OUTPUT"
 
   test:
     name: ${{ matrix.id }} tests
@@ -168,9 +182,19 @@ jobs:
         run: npm run ${{ matrix.npm_script }}
         env:
           CI: true
-          PLAYWRIGHT_WORKERS: ${{ needs.resolve-suite.outputs.workers }}
+          PLAYWRIGHT_WORKERS: ${{ matrix.workers || needs.resolve-suite.outputs.workers }}
+          PLAYWRIGHT_BLOB_REPORT: ${{ matrix.shard != '' && '1' || '0' }}
           DEMOQA_USERNAME: ${{ secrets.DEMOQA_USERNAME }}
           DEMOQA_PASSWORD: ${{ secrets.DEMOQA_PASSWORD }}
+
+      - name: Upload blob report (${{ matrix.artifact }})
+        if: always() && matrix.shard != ''
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: blob-report-${{ matrix.shard }}
+          path: blob-report/
+          retention-days: 14
+          if-no-files-found: warn
 
       - name: Upload Playwright report (${{ matrix.artifact }})
         if: always()
@@ -205,3 +229,54 @@ jobs:
           name: test-results-${{ matrix.artifact }}
           path: test-results/
           retention-days: 14
+
+  merge-e2e-report:
+    name: Merge E2E report
+    needs: [resolve-suite, test]
+    if: >-
+      always() &&
+      needs.resolve-suite.outputs.run_e2e == 'true' &&
+      (needs.test.result == 'success' || needs.test.result == 'failure')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download shard blob reports
+        uses: actions/download-artifact@v7.0.0
+        with:
+          pattern: blob-report-*
+          path: all-blob-reports
+          merge-multiple: true
+
+      - name: Merge blob reports
+        run: npx playwright merge-reports --config=playwright.config.ts ./all-blob-reports
+
+      - name: Upload merged HTML report
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: playwright-report-e2e-merged
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Upload merged JUnit report
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: junit-e2e-merged
+          path: test-results/junit.xml
+          retention-days: 14
+          if-no-files-found: warn
