@@ -135,9 +135,31 @@ jobs:
           echo "workers=$WORKERS" >> "$GITHUB_OUTPUT"
           echo "run_e2e=$RUN_E2E" >> "$GITHUB_OUTPUT"
 
+  demoqa-health:
+    name: DemoQA health
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check DemoQA catalog
+        run: npm run test:health
+
   test:
     name: ${{ matrix.id }} tests
-    needs: resolve-suite
+    needs: [resolve-suite, demoqa-health]
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
@@ -278,5 +300,44 @@ jobs:
         with:
           name: junit-e2e-merged
           path: test-results/junit.xml
+          retention-days: 14
+          if-no-files-found: warn
+
+  retry-summary:
+    name: Retry summary
+    needs: test
+    if: always() && (needs.test.result == 'success' || needs.test.result == 'failure')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download JUnit reports
+        continue-on-error: true
+        uses: actions/download-artifact@v7.0.0
+        with:
+          pattern: junit-*
+          path: junit-reports
+
+      - name: Summarize retries
+        run: node scripts/run-retry-summary.mjs junit-reports retry-summary.md
+
+      - name: Upload retry summary
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: retry-summary
+          path: retry-summary.md
           retention-days: 14
           if-no-files-found: warn
