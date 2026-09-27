@@ -117,9 +117,10 @@ user is recorded and `globalTeardown` retries deletion.
 ### Static authenticated user
 
 An environment-configured static user creates Playwright `storageState` for
-non-mutating authenticated smoke paths. CI receives its credentials from repository
-secrets. The static user must not be used for tests that change shared collection
-state.
+non-mutating authenticated smoke paths. `DEMOQA_USERNAME` and `DEMOQA_PASSWORD` are
+required wherever that user is used: a gitignored `.env` file locally, repository
+secrets in CI. The repository does not contain a default account. The static user
+must not be used for tests that change shared collection state.
 
 ### Known catalog data
 

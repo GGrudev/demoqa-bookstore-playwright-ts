@@ -53,22 +53,19 @@ function getStaticValidUser() {
     const userName = process.env.DEMOQA_USERNAME;
     const password = process.env.DEMOQA_PASSWORD;
 
-    if (process.env.CI) {
-        if (!userName || !password) {
-            throw new Error(
-                'CI requires DEMOQA_USERNAME and DEMOQA_PASSWORD repository secrets ' +
-                    'for suites that use the static DemoQA user (smoke/e2e/authenticated). ' +
-                    'API-only jobs do not need them.'
-            );
-        }
+    if (!userName || !password) {
+        const source = process.env.CI
+            ? 'repository secrets'
+            : 'a gitignored .env file (see .env.example)';
 
-        return { userName, password };
+        throw new Error(
+            'DEMOQA_USERNAME and DEMOQA_PASSWORD are required for suites that use the static ' +
+                `DemoQA user (smoke/e2e/authenticated). Set both as ${source}. ` +
+                'Offline and API-only runs do not need them.'
+        );
     }
 
-    return {
-        userName: userName || 'jdoe',
-        password: password || 'Test123!',
-    };
+    return { userName, password };
 }
 
 function getEnvironmentBase(): EnvironmentBase {

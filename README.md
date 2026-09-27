@@ -13,6 +13,14 @@ responsibilities, data isolation, CI gates, and explicit exclusions. The
 [architecture](docs/architecture.md) shows project dependencies and the API-to-UI
 data flow.
 
+## What it shows
+
+- A pull request is gated by lint, types, format, and offline tests, without calling DemoQA.
+- Live API and UI runs are manual or weekly. They start only after the book catalog responds.
+- Mutating scenarios create an isolated user through the API. A static user exists only for a shared read-only session, and its password is not stored in the repo.
+- Contract tests reject unexpected API fields. Setup code accepts extra fields and reads only the identifiers it needs.
+- Chromium end-to-end tests run as two shards with one merged report. A pass that needed a retry stays visible after the run.
+
 ## Why it is built this way
 
 **Pull requests do not hit DemoQA.** Lint, typecheck, format, and an `offline` project (Zod contracts against recorded payloads, plus `ApiHelpers` against an in-process stub) run on every push. Live API and UI suites are manual dispatch or the weekly regression workflow.
@@ -80,10 +88,10 @@ git clone https://github.com/GGrudev/demoqa-bookstore-playwright-ts.git
 cd demoqa-bookstore-playwright-ts
 npm install
 npx playwright install chromium
-cp .env.example .env   # optional local overrides for DEMOQA_USERNAME / DEMOQA_PASSWORD
+cp .env.example .env   # required for local smoke, e2e, and authenticated runs
 ```
 
-Offline and API-only runs do not need credentials. UI smoke, e2e, and authenticated suites do — locally they fall back to `config/environments.ts`; in CI set `DEMOQA_USERNAME` and `DEMOQA_PASSWORD` as repository secrets.
+Offline and API-only runs do not need credentials. UI smoke, e2e, and authenticated suites need `DEMOQA_USERNAME` and `DEMOQA_PASSWORD` in `.env` locally, and as repository secrets in CI. There is no default account in the repo.
 
 ## Commands
 
