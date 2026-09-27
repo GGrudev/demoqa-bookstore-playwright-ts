@@ -129,13 +129,13 @@ and should be classified as an environment/data change before modifying assertio
 
 ## Execution and CI policy
 
-| Trigger                  | Required checks                                                | Live DemoQA traffic |
-| ------------------------ | -------------------------------------------------------------- | ------------------- |
-| Pull request / push      | Lint, typecheck, formatting, offline project                   | No                  |
-| Manual API run           | Quality checks and API project                                 | Yes                 |
-| Manual smoke run         | Quality checks, API smoke, Chromium smoke, authenticated smoke | Yes                 |
-| Weekly regression        | Quality checks, API, and two Chromium/authenticated E2E shards | Yes                 |
-| Manual cross-browser run | Firefox and WebKit E2E                                         | Yes                 |
+| Trigger                  | Required checks                                              | Live DemoQA traffic |
+| ------------------------ | ------------------------------------------------------------ | ------------------- |
+| Pull request / push      | Lint, typecheck, formatting, offline project                 | No                  |
+| Manual API run           | Quality checks, DemoQA health check, API project             | Yes                 |
+| Manual smoke run         | Quality checks, DemoQA health check, API and UI smoke        | Yes                 |
+| Weekly regression        | Quality checks, DemoQA health check, API, and two E2E shards | Yes                 |
+| Manual cross-browser run | Quality checks, DemoQA health check, Firefox and WebKit      | Yes                 |
 
 CI forbids committed `test.only`, uses bounded workers, and retains Playwright
 diagnostics according to the configured retry/failure policy.
@@ -164,11 +164,19 @@ Live DemoQA availability is not a pull request prerequisite.
 
 ### Live regression
 
+A live run starts with a catalog request, `GET /BookStore/v1/Books`. The suite
+does not start unless that response is HTTP 200 and the `books` array is non-empty.
+The check retries once. It does not validate the full book schema; schema drift stays
+with the contract tests.
+
 A live run is considered successful when all selected projects pass after configured
 retries and cleanup completes or records recoverable leaked users.
 
-A retry that turns a failure into a pass is still reliability evidence and should be
-reviewed rather than treated as equivalent to a first-attempt pass.
+JUnit is written with retries included. A follow-up job reads every job report except
+the merged end-to-end copy and publishes which tests passed only after a retry. A
+retry that turns a failure into a pass is still reliability evidence and should be
+reviewed rather than treated as equivalent to a first-attempt pass. The summary job
+does not fail the run for that.
 
 ## Failure classification
 
@@ -188,7 +196,7 @@ Tests must not weaken assertions merely to make an external failure pass.
 
 The framework uses:
 
-- HTML and JUnit reports;
+- HTML and JUnit reports, plus a retry summary for live runs;
 - traces on the first CI retry and retained traces for local failures;
 - screenshots and CI videos on failure;
 - JSON attachments for scenario context and accessibility violations;

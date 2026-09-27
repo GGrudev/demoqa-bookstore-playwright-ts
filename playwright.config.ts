@@ -43,7 +43,8 @@ export default defineConfig<TestOptions>({
                 outputFolder: 'playwright-report',
             },
         ],
-        ['junit', { outputFile: 'test-results/junit.xml' }],
+        // includeRetries keeps a pass-after-retry visible as flakyFailure in JUnit.
+        ['junit', { outputFile: 'test-results/junit.xml', includeRetries: true }],
         ...(isCI ? [['github'] as const] : []),
         ...(useBlobReport ? [['blob', { outputDir: 'blob-report' }] as const] : []),
     ],

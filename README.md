@@ -67,6 +67,8 @@ Chromium is the UI gate. Firefox and WebKit are configured but opt-in (`npm run 
 
 Weekly and manual regression split that Chromium and authenticated suite into two shards. Each shard writes a blob report; a follow-up job merges them into one HTML report. API, smoke, and cross-browser runs stay in a single job.
 
+Live workflows request the public book catalog before starting tests. If DemoQA does not return a non-empty catalog, the suite does not start. After the run, a retry summary lists tests that passed only on a later attempt. That summary is evidence to review; it does not by itself fail the workflow.
+
 Accessibility is one login-page axe scan against WCAG 2.0/2.1 A and AA. Ad iframes and the upstream ToolsQA banner are excluded by selector, so `image-alt` still runs on the application's own markup.
 
 ## Setup
@@ -93,6 +95,7 @@ npm run test:e2e
 npm run test:e2e:shard:1   # first half of Chromium + authenticated
 npm run test:e2e:shard:2   # second half
 npm run test:smoke
+npm run test:health   # one catalog request against DemoQA
 npm run lint
 npm run typecheck
 ```

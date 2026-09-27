@@ -15,6 +15,7 @@
         "test:regression": "playwright test",
         "test:e2e:shard:1": "playwright test --project=chromium --project=authenticated --shard=1/2",
         "test:e2e:shard:2": "playwright test --project=chromium --project=authenticated --shard=2/2",
+        "test:health": "node scripts/run-demoqa-health.mjs",
         "test:report": "playwright show-report",
         "test:report:merge": "playwright merge-reports --config=playwright.config.ts ./all-blob-reports",
         "lint": "eslint . --max-warnings=0",

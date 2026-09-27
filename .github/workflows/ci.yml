@@ -106,9 +106,32 @@ jobs:
           path: test-results/
           retention-days: 14
 
+  demoqa-health:
+    name: DemoQA health
+    needs: quality
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.suite != 'none'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check DemoQA catalog
+        run: npm run test:health
+
   api-tests:
     name: API tests (parallel)
-    needs: quality
+    needs: [quality, demoqa-health]
     if: github.event_name == 'workflow_dispatch' && (github.event.inputs.suite == 'api' || github.event.inputs.suite == 'both')
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -168,7 +191,7 @@ jobs:
 
   smoke-tests:
     name: Smoke tests (parallel)
-    needs: quality
+    needs: [quality, demoqa-health]
     if: github.event_name == 'workflow_dispatch' && (github.event.inputs.suite == 'smoke' || github.event.inputs.suite == 'both')
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -246,3 +269,47 @@ jobs:
           name: test-results-smoke
           path: test-results/
           retention-days: 14
+
+  retry-summary:
+    name: Retry summary
+    needs: [api-tests, smoke-tests]
+    if: >-
+      always() &&
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.suite != 'none' &&
+      (needs.api-tests.result == 'success' || needs.api-tests.result == 'failure' ||
+       needs.smoke-tests.result == 'success' || needs.smoke-tests.result == 'failure')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download JUnit reports
+        continue-on-error: true
+        uses: actions/download-artifact@v7.0.0
+        with:
+          pattern: junit-*
+          path: junit-reports
+
+      - name: Summarize retries
+        run: node scripts/run-retry-summary.mjs junit-reports retry-summary.md
+
+      - name: Upload retry summary
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: retry-summary
+          path: retry-summary.md
+          retention-days: 14
+          if-no-files-found: warn
