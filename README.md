@@ -9,7 +9,9 @@
 Playwright + TypeScript UI and API tests for the [DemoQA Book Store](https://demoqa.com/books).
 
 See the [test strategy](docs/test-strategy.md) for risk coverage, test-layer
-responsibilities, data isolation, CI gates, and explicit exclusions.
+responsibilities, data isolation, CI gates, and explicit exclusions. The
+[architecture](docs/architecture.md) shows project dependencies and the API-to-UI
+data flow.
 
 ## Why it is built this way
 
