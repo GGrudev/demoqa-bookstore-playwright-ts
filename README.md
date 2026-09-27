@@ -8,6 +8,9 @@
 
 Playwright + TypeScript UI and API tests for the [DemoQA Book Store](https://demoqa.com/books).
 
+See the [test strategy](docs/test-strategy.md) for risk coverage, test-layer
+responsibilities, data isolation, CI gates, and explicit exclusions.
+
 ## Why it is built this way
 
 **Pull requests do not hit DemoQA.** Lint, typecheck, format, and an `offline` project (Zod contracts against recorded payloads, plus `ApiHelpers` against an in-process stub) run on every push. Live API and UI suites are manual dispatch or the weekly regression workflow.
