@@ -89,7 +89,9 @@ Create user -> seed collection through API -> log in through UI -> verify UI -> 
 ```
 
 DemoQA may invalidate a browser session when API mutations occur after login.
-Therefore, API setup must complete before UI authentication.
+Therefore, API setup must complete before UI authentication. The
+[architecture](architecture.md) shows this sequence and the separate static-session
+flow.
 
 ### Accessibility check
 
