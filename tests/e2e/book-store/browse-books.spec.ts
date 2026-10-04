@@ -96,7 +96,7 @@ test.describe(
             bookStorePage,
             bookDetailsPage,
         }) => {
-            const expectedBook = TestDataBuilder.getKnownBooks()[0];
+            const expectedBook = TestDataBuilder.gitPocketGuide;
 
             await test.step('Click on a book title', async () => {
                 await bookStorePage.clickBookByTitle(expectedBook.title);
@@ -112,7 +112,7 @@ test.describe(
             bookStorePage,
             bookDetailsPage,
         }) => {
-            const expectedBook = TestDataBuilder.getKnownBooks()[0];
+            const expectedBook = TestDataBuilder.gitPocketGuide;
 
             await test.step('Navigate to book details', async () => {
                 await bookStorePage.clickBookByTitle(expectedBook.title);
