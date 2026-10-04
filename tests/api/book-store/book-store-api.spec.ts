@@ -38,7 +38,7 @@ test.describe(
         });
 
         test('Get book by ISBN returns correct book', async ({ apiHelpers }) => {
-            const expectedBook = TestDataBuilder.getKnownBooks()[0];
+            const expectedBook = TestDataBuilder.gitPocketGuide;
 
             await test.step('Fetch book by ISBN', async () => {
                 const response = await apiHelpers.getBookByIsbn(expectedBook.isbn);
@@ -78,7 +78,7 @@ test.describe(
         });
 
         test('Add book to user collection', async ({ apiHelpers, apiTestUser }) => {
-            const bookToAdd = TestDataBuilder.getKnownBooks()[0];
+            const bookToAdd = TestDataBuilder.gitPocketGuide;
 
             await test.step('Add a known book to an isolated user', async () => {
                 const response = await apiHelpers.addBooksToUser(
@@ -110,7 +110,7 @@ test.describe(
             { name: 'invalid token', token: 'not-a-valid-token' },
         ]) {
             test(`Add book rejects ${scenario.name}`, async ({ apiHelpers, apiTestUser }) => {
-                const bookToAdd = TestDataBuilder.getKnownBooks()[0];
+                const bookToAdd = TestDataBuilder.gitPocketGuide;
 
                 const response = await apiHelpers.addBooksToUser(
                     apiTestUser.userId,
@@ -139,7 +139,7 @@ test.describe(
         });
 
         test('Add book rejects a duplicate ISBN', async ({ apiHelpers, apiTestUser }) => {
-            const bookToAdd = TestDataBuilder.getKnownBooks()[0];
+            const bookToAdd = TestDataBuilder.gitPocketGuide;
             const firstResponse = await apiHelpers.addBooksToUser(
                 apiTestUser.userId,
                 apiTestUser.token,
@@ -161,7 +161,7 @@ test.describe(
         });
 
         test('Delete book from user collection', async ({ apiHelpers, apiTestUser }) => {
-            const bookToDelete = TestDataBuilder.getKnownBooks()[0];
+            const bookToDelete = TestDataBuilder.gitPocketGuide;
 
             await test.step('Create a user collection with one book', async () => {
                 const addResponse = await apiHelpers.addBooksToUser(
@@ -199,7 +199,10 @@ test.describe(
         });
 
         test('Delete all books from user collection', async ({ apiHelpers, apiTestUser }) => {
-            const booksToDelete = TestDataBuilder.getKnownBooks().slice(0, 2);
+            const booksToDelete = [
+                TestDataBuilder.gitPocketGuide,
+                TestDataBuilder.learningJavaScript,
+            ];
             const addResponse = await apiHelpers.addBooksToUser(
                 apiTestUser.userId,
                 apiTestUser.token,
@@ -222,8 +225,8 @@ test.describe(
         });
 
         test('Replace book in user collection', async ({ apiHelpers, apiTestUser }) => {
-            const originalBook = TestDataBuilder.getKnownBooks()[0];
-            const replacementBook = TestDataBuilder.getKnownBooks()[1];
+            const originalBook = TestDataBuilder.gitPocketGuide;
+            const replacementBook = TestDataBuilder.learningJavaScript;
 
             await test.step('Add original book to user collection', async () => {
                 const response = await apiHelpers.addBooksToUser(

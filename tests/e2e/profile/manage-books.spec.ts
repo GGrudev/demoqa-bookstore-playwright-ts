@@ -33,7 +33,7 @@ test.describe(
                 tag: ['@smoke'],
             },
             async ({ apiHelpers, apiTestUser, page, profilePage }) => {
-                const bookToAdd = TestDataBuilder.getKnownBooks()[0];
+                const bookToAdd = TestDataBuilder.gitPocketGuide;
                 await attachJson('collection-context', {
                     userId: apiTestUser.userId,
                     userName: apiTestUser.userName,

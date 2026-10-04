@@ -20,7 +20,7 @@ test.describe(
             bookDetailsPage,
             profilePage,
         }) => {
-            const bookToAdd = TestDataBuilder.getKnownBooks()[0];
+            const bookToAdd = TestDataBuilder.gitPocketGuide;
             await attachJson('collection-context', {
                 userId: loggedInApiUser.userId,
                 userName: loggedInApiUser.userName,
@@ -52,7 +52,7 @@ test.describe(
             page,
             profilePage,
         }) => {
-            const bookToDelete = TestDataBuilder.getKnownBooks()[0];
+            const bookToDelete = TestDataBuilder.gitPocketGuide;
             await attachJson('collection-context', {
                 userId: apiTestUser.userId,
                 userName: apiTestUser.userName,
@@ -98,7 +98,7 @@ test.describe(
             profilePage,
         }) => {
             test.setTimeout(timeouts.longTest);
-            const booksToAdd = TestDataBuilder.getKnownBooks().slice(0, 2);
+            const booksToAdd = [TestDataBuilder.gitPocketGuide, TestDataBuilder.learningJavaScript];
             await attachJson('collection-context', {
                 userId: apiTestUser.userId,
                 userName: apiTestUser.userName,
