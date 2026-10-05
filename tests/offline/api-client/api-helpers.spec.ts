@@ -1,4 +1,5 @@
 import { test, expect } from '../stub-fixtures';
+import { TestDataBuilder } from '@config/test-data';
 import createdUser from '../recorded/created-user.json';
 import errorIsbnNotAvailable from '../recorded/error-isbn-not-available.json';
 import tokenFailure from '../recorded/token-failure.json';
@@ -84,7 +85,7 @@ test.describe(
         }) => {
             stubServer.queueResponse({ status: 400, body: errorIsbnNotAvailable });
 
-            const response = await stubApi.getBookByIsbn('0000000000000');
+            const response = await stubApi.getBookByIsbn(TestDataBuilder.unavailableIsbn);
 
             expect(response.status).toBe(400);
             expect(response.body).toEqual(errorIsbnNotAvailable);

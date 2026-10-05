@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { TestDataBuilder } from '@config/test-data';
 import {
     ApiErrorSchema,
     CreatedUserEnvelopeSchema,
@@ -54,7 +55,7 @@ test.describe(
         test('recorded error payload satisfies the error contract', () => {
             const parsed = parseApiResponse(ApiErrorSchema, errorIsbnNotAvailable);
 
-            expect(parsed.code).toBe('1205');
+            expect(parsed.code).toBe(TestDataBuilder.bookStoreErrors.isbnNotAvailable);
         });
 
         test('an added field fails the strict book contract', () => {
