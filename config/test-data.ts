@@ -133,6 +133,14 @@ export class TestDataBuilder {
         website: 'https://leanpub.com/understandinges6/read',
     };
 
+    static readonly unavailableIsbn = '0000000000000';
+
+    static readonly bookStoreErrors = {
+        isbnNotAvailable: '1205',
+        userNotAuthorized: '1200',
+        isbnAlreadyPresent: '1210',
+    } as const;
+
     static getKnownBooks(): BookData[] {
         return [
             this.gitPocketGuide,

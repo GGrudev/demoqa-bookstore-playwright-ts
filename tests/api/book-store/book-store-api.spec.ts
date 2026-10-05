@@ -54,11 +54,11 @@ test.describe(
 
         test('Get book by invalid ISBN returns 400', async ({ apiHelpers }) => {
             await test.step('Fetch book with non-existent ISBN', async () => {
-                const response = await apiHelpers.getBookByIsbn('0000000000000');
+                const response = await apiHelpers.getBookByIsbn(TestDataBuilder.unavailableIsbn);
 
                 expect(response.status).toBe(400);
                 const error = parseApiResponse(ApiErrorSchema, response.body);
-                expect(error.code).toBe('1205');
+                expect(error.code).toBe(TestDataBuilder.bookStoreErrors.isbnNotAvailable);
                 expect(error.message).toContain('ISBN supplied is not available');
             });
         });
@@ -120,7 +120,7 @@ test.describe(
 
                 expect(response.status).toBe(401);
                 const error = parseApiResponse(ApiErrorSchema, response.body);
-                expect(error.code).toBe('1200');
+                expect(error.code).toBe(TestDataBuilder.bookStoreErrors.userNotAuthorized);
                 expect(error.message).toBe('User not authorized!');
             });
         }
@@ -129,12 +129,12 @@ test.describe(
             const response = await apiHelpers.addBooksToUser(
                 apiTestUser.userId,
                 apiTestUser.token,
-                ['0000000000000']
+                [TestDataBuilder.unavailableIsbn]
             );
 
             expect(response.status).toBe(400);
             const error = parseApiResponse(ApiErrorSchema, response.body);
-            expect(error.code).toBe('1205');
+            expect(error.code).toBe(TestDataBuilder.bookStoreErrors.isbnNotAvailable);
             expect(error.message).toContain('ISBN supplied is not available');
         });
 
@@ -156,7 +156,7 @@ test.describe(
 
             expect(duplicateResponse.status).toBe(400);
             const error = parseApiResponse(ApiErrorSchema, duplicateResponse.body);
-            expect(error.code).toBe('1210');
+            expect(error.code).toBe(TestDataBuilder.bookStoreErrors.isbnAlreadyPresent);
             expect(error.message).toBe("ISBN already present in the User's Collection!");
         });
 
