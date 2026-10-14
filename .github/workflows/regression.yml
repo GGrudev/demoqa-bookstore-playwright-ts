@@ -211,7 +211,7 @@ jobs:
 
       - name: Upload blob report (${{ matrix.artifact }})
         if: always() && matrix.shard != ''
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: blob-report-${{ matrix.shard }}
           path: blob-report/
@@ -220,7 +220,7 @@ jobs:
 
       - name: Upload Playwright report (${{ matrix.artifact }})
         if: always()
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: playwright-report-${{ matrix.artifact }}
           path: playwright-report/
@@ -228,7 +228,7 @@ jobs:
 
       - name: Upload JUnit report (${{ matrix.artifact }})
         if: always()
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: junit-${{ matrix.artifact }}
           path: test-results/junit.xml
@@ -246,7 +246,7 @@ jobs:
 
       - name: Upload test results (${{ matrix.artifact }})
         if: failure()
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: test-results-${{ matrix.artifact }}
           path: test-results/
@@ -287,7 +287,7 @@ jobs:
 
       - name: Upload merged HTML report
         if: always()
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: playwright-report-e2e-merged
           path: playwright-report/
@@ -296,7 +296,7 @@ jobs:
 
       - name: Upload merged JUnit report
         if: always()
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: junit-e2e-merged
           path: test-results/junit.xml
@@ -335,7 +335,7 @@ jobs:
 
       - name: Upload retry summary
         if: always()
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: retry-summary
           path: retry-summary.md
