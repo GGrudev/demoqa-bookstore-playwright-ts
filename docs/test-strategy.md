@@ -107,9 +107,11 @@ the full violation payload for review.
 Mutating tests use the `apiTestUser` fixture. Each test:
 
 1. generates unique credentials;
-2. creates the account and token through the API;
-3. owns all mutations made for the scenario;
-4. attempts cleanup in a `finally` block.
+2. creates the account through the API, which arms cleanup immediately;
+3. requests a token, inside the same cleanup guard, so a token failure still deletes the
+   account;
+4. owns all mutations made for the scenario;
+5. attempts cleanup in a `finally` block.
 
 Cleanup failures annotate the test rather than replacing the scenario result. The
 user is recorded and `globalTeardown` retries deletion.

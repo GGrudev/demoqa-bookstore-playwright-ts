@@ -130,10 +130,14 @@ test.describe(
                     await profilePage.verifyBookInProfile(book.title);
                 }
 
-                await profilePage.deleteAllBooks();
+                const deleteResponse = await profilePage.deleteAllBooks();
+
+                expect(deleteResponse.status()).toBe(204);
             });
 
             await test.step('Verify the profile collection is empty', async () => {
+                // DemoQA clears the collection server-side but does not re-render the table.
+                await page.reload();
                 await profilePage.verifyNoBooksInProfile();
             });
         });

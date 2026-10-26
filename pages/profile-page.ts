@@ -1,4 +1,4 @@
-import { Locator, Page, expect } from '@playwright/test';
+import { Locator, Page, Response, expect } from '@playwright/test';
 import { BasePage } from '@utils/base-page';
 import { BooksTable } from '@components/books-table';
 import { ConfirmDialog } from '@components/confirm-dialog';
@@ -31,25 +31,30 @@ export default class ProfilePage extends BasePage {
         return this.books.getTitles();
     }
 
-    async deleteAllBooks() {
+    // Clicks "Delete All Books", confirms, and returns the DELETE response. Callers assert
+    // the status and the resulting page state. DemoQA clears the collection on the server
+    // but does not re-render the table, so callers must reload before checking the table.
+    async deleteAllBooks(): Promise<Response> {
         await this.deleteAllBooksButton.scrollIntoViewIfNeeded();
         await this.deleteAllBooksButton.click();
         const dialog = this.page.getByRole('dialog', { name: 'Delete All Books' });
-        const deleteResponsePromise = this.page.waitForResponse(
-            (response) =>
-                response.request().method() === 'DELETE' &&
-                new URL(response.url()).pathname === '/BookStore/v1/Books',
-            { timeout: timeouts.uiSettle }
-        );
-        await this.confirmDialog.confirmWithOptionalAlert(
-            dialog.getByRole('button', { name: 'OK' }),
-            false
-        );
-        const deleteResponse = await deleteResponsePromise;
-        expect(deleteResponse.status()).toBe(204);
-        // Delete All Books updates the server but does not refresh the table.
-        await this.page.reload();
-        await this.verifyNoBooksInProfile();
+
+        // Start listening before confirming so a fast response is not missed. Promise.all
+        // also handles the listener if the confirm step throws, so it cannot reject unhandled.
+        const [deleteResponse] = await Promise.all([
+            this.page.waitForResponse(
+                (response) =>
+                    response.request().method() === 'DELETE' &&
+                    new URL(response.url()).pathname === '/BookStore/v1/Books',
+                { timeout: timeouts.uiSettle }
+            ),
+            this.confirmDialog.confirmWithOptionalAlert(
+                dialog.getByRole('button', { name: 'OK' }),
+                false
+            ),
+        ]);
+
+        return deleteResponse;
     }
 
     async navigateToBookStore() {
@@ -80,8 +85,7 @@ export default class ProfilePage extends BasePage {
     async deleteBookByIsbn(isbn: string) {
         const row = this.books.rowByIsbn(isbn);
         await expect(row).toBeVisible();
-        // Delete control is an unlabeled image in the last cell.
-        await row.locator('td').last().getByRole('img').click();
+        await this.books.deleteControl(row).click();
         await this.confirmDialog.confirmDeleteBook();
         await expect(row).toBeHidden();
     }
