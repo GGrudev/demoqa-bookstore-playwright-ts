@@ -66,6 +66,13 @@ export class BooksTable {
         return this.table.locator(`tbody > tr:has(a[href*="${isbn}"])`);
     }
 
+    // DemoQA renders the delete control as `<span title="Delete">` around an SVG. The
+    // title is the tooltip users see, so it survives column reordering and extra icons
+    // in the row, which a "last cell, any image" locator does not.
+    deleteControl(row: Locator): Locator {
+        return row.getByTitle('Delete', { exact: true });
+    }
+
     rowByTitle(title: string): Locator {
         return this.table.getByRole('row', { name: new RegExp(title) });
     }
