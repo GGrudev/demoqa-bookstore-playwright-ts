@@ -149,9 +149,19 @@ export class ApiHelpers {
 
     // Loose envelopes: only the fields fixtures need (user id, token).
 
-    async createUserAndGetToken(userName: string, password: string) {
+    // Account creation and token generation are separate steps on purpose: once the
+    // account exists it must be cleaned up even if the token step fails.
+    async createAccount(
+        userName: string,
+        password: string
+    ): Promise<{ userId: string; userName: string }> {
         const userResponse = await this.createUser(userName, password);
         const user = parseApiResponse(CreatedUserEnvelopeSchema, userResponse.body);
+
+        return { userId: user.userID, userName: user.username };
+    }
+
+    async fetchToken(userName: string, password: string): Promise<string> {
         const tokenResponse = await this.generateToken(userName, password);
         const { token } = parseApiResponse(TokenEnvelopeSchema, tokenResponse.body);
 
@@ -159,10 +169,13 @@ export class ApiHelpers {
             throw new Error(`Failed to generate token for '${userName}': token was null`);
         }
 
-        return {
-            userId: user.userID,
-            userName: user.username,
-            token,
-        };
+        return token;
+    }
+
+    async createUserAndGetToken(userName: string, password: string) {
+        const account = await this.createAccount(userName, password);
+        const token = await this.fetchToken(userName, password);
+
+        return { ...account, token };
     }
 }

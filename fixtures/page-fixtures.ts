@@ -7,16 +7,9 @@ import ProfilePage from '@pages/profile-page';
 import { ApiHelpers } from '@utils/api-helpers';
 import { TestDataBuilder } from '@config/test-data';
 import { loginViaUi } from '@utils/auth-flow';
-import { deleteTestUser } from '@utils/test-user-cleanup';
+import { runWithApiTestUser, type ApiTestUser } from '@utils/api-test-user';
 import { recordLeakedUser } from '@utils/test-user-registry';
 import { getApiBaseUrl } from '@config/environments';
-
-type ApiTestUser = {
-    userId: string;
-    userName: string;
-    password: string;
-    token: string;
-};
 
 type TestOptions = {
     apiBaseUrl: string;
@@ -54,33 +47,17 @@ const testPages = baseTest.extend<Pages & TestOptions>({
         await use(new ApiHelpers(request, apiBaseUrl));
     },
     apiTestUser: async ({ apiHelpers }, use, testInfo) => {
-        const user = TestDataBuilder.createRandomUser();
-        const createdUser = await apiHelpers.createUserAndGetToken(user.userName, user.password);
-        const apiTestUser = {
-            ...createdUser,
-            password: user.password,
-        };
+        const credentials = TestDataBuilder.createRandomUser();
 
-        try {
-            await use(apiTestUser);
-        } finally {
-            const cleanup = await deleteTestUser(apiHelpers, apiTestUser);
+        await runWithApiTestUser(apiHelpers, credentials, use, async (leaked) => {
+            // Cleanup failed; annotate and retry in globalTeardown.
+            testInfo.annotations.push({
+                type: 'cleanup-failed',
+                description: `${leaked.userName} (${leaked.userId}): ${leaked.reason}`,
+            });
 
-            if (!cleanup.ok) {
-                // Cleanup failed; annotate and retry in globalTeardown.
-                testInfo.annotations.push({
-                    type: 'cleanup-failed',
-                    description: `${apiTestUser.userName} (${apiTestUser.userId}): ${cleanup.reason}`,
-                });
-
-                await recordLeakedUser({
-                    userId: apiTestUser.userId,
-                    userName: apiTestUser.userName,
-                    password: apiTestUser.password,
-                    reason: cleanup.reason,
-                });
-            }
-        }
+            await recordLeakedUser(leaked);
+        });
     },
     loggedInApiUser: async ({ page, apiTestUser }, use) => {
         await loginViaUi(page, apiTestUser);
